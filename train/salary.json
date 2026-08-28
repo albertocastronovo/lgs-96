@@ -1,0 +1,16 @@
+[
+  {"description": "Salary range: 29,302 -65,054 Euro", "expected": [29302, 65054]},
+  {"description": "Retribuzione:\n\nLa fascia retributiva prevista per la posizione è commisurata all'esperienza, al livello di autonomia e alle competenze tecniche dimostrate durante il processo di selezione. Indicativamente:\n\nCompetenze Base – RAL tra 30.000€ e 35.000€\n\nCompetenze Intermedie – RAL tra 35.000€ e 45.000€\n\nCompetenze Avanzate – RAL da 45.000€ +", "expected": [30000, 45000]},
+  {"description": "Inquadramento: CCNL Commercio – 3° o 2° Livello.\n\nRetribuzione annua lorda (RAL):\n\n\nda € 27.746 a € 30.825 per il 3° livello del CCNL Commercio.\nda € 31.720 a € 40.150 per il 2° livello del CCNL Commercio.", "expected": [27746, 40150]},
+  {"description": "La retribuzione per questo ruolo è compresa tra i 28000€ e i 35000€, più una parte variabile da concordare.", "expected": [28000, 35000]},
+  {"description": "Range of salary: €25.000 - €28.000 RAL for junior profiles; €30.000 - €35.000 RAL for candidates with 2+ years of experience in grid coding.", "expected": [25000, 35000]},
+  {"description": "Modalità di Lavoro e Contratto\n\nLavoro in presenza a Vimercate (MB)\nTipologia di Contratto: Assunzione a tempo indeterminato\nRAL, commisurata alla reale esperienza", "expected": []},
+  {"description": "Si offre contratto a tempo indeterminato e ottime possibilità di crescita economica e professionale.", "expected": []},
+  {"description": "The expected salary range for this position is € 38,000 – €45,000 gross annual salary (RAL), plus variable pay relevant for the role.", "expected": [38000, 45000]},
+  {"description": "€40,000 - €75,000 a year", "expected": [40000, 75000]},
+  {"description": "Inquadramento secondo il CCNL Commercio: la RAL prevista per questa posizione va da un minimo di € 25k per profili junior a un massimo di € 50k per profili con esperienza significativa nel ruolo\n\n\nQualora le tue aspettative economiche non rientrassero nel range indicato, ti invitiamo comunque a inviarci il tuo CV: valuteremo volentieri la tua candidatura.", "expected": [25000, 50000]},
+  {"description": "La retribuzione annua lorda per questo ruolo è compresa tra 46.000 EUR e 52.000 EUR.\n\nLa posizione è inquadrata nell’ambito del CCNL del Commercio e Terziario applicato dalla nostra società.", "expected": [46000, 52000]},
+  {"description": "Total compensation:\n\nContract type: Permanent\nLevel: CCNL Commercio\nGross annual salary (RAL): €35.000 – €47.000 (determined on the basis of objective, neutral, and verifiable criteria)\nBenefits: meal vouchers €6.50, corporate agreements/discounts\nSmart working: individual remote working agreements\nWorking hours: Full-time (40 hours per week) with flexibility", "expected": [35000, 47000]},
+  {"description": "Your base salary will be determined based on your location, experience, and the pay of employees in similar positions. For Poland: The base salary range is 292,500 PLN - 507,000 PLN for Level 4, and 375,000 PLN - 650,000 PLN for Level 5. , , JR2017366", "expected": [292500, 650000]},
+  {"description": "We're pleased to share that the fixed salary range for this position is 30.000 - 45.000.", "expected": [30000, 45000]}
+]
