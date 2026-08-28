@@ -12,13 +12,38 @@ function toComparable(info) {
 
 test("all salary.json fixtures produce exact expected results", () => {
   fixtures.forEach((record, index) => {
-    const info = SalaryParser.findSalaryInfo(record.description);
+    const info = SalaryParser.findSalaryInfo(record.description, {
+      defaultCurrency: "EUR",
+      allowBareRange: true,
+    });
     assert.deepEqual(
       toComparable(info),
       record.expected,
       `fixture ${index} failed: ${JSON.stringify(record.description.slice(0, 60))}`
     );
   });
+});
+
+test("PLN fixture keeps explicit currency", () => {
+  const record = fixtures.find((r) => r.description.includes("PLN"));
+  const info = SalaryParser.findSalaryInfo(record.description);
+  assert.equal(info.currency, "PLN");
+  assert.deepEqual(toComparable(info), record.expected);
+});
+
+test("currencyless fixture defaults to EUR for Italian context", () => {
+  const record = fixtures.find((r) => r.description.includes("fixed salary range"));
+  const info = SalaryParser.findSalaryInfo(record.description, {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.equal(info.currency, "EUR");
+  assert.deepEqual(toComparable(info), record.expected);
+});
+
+test("currencyless fixture without defaults stays unrecognized", () => {
+  const record = fixtures.find((r) => r.description.includes("fixed salary range"));
+  assert.deepEqual(toComparable(SalaryParser.findSalaryInfo(record.description)), []);
 });
 
 test("USD annual range", () => {
@@ -105,5 +130,79 @@ test("display formatting uses currency symbols", () => {
   assert.equal(
     SalaryParser.formatSalary({ kind: "range", min: 30000, max: 35000, currency: "GBP" }),
     "£30k - £35k"
+  );
+});
+
+test("PLN display uses code prefix", () => {
+  assert.equal(
+    SalaryParser.formatSalary({ kind: "range", min: 292500, max: 650000, currency: "PLN" }),
+    "PLN 292k - PLN 650k"
+  );
+});
+
+test("location to currency inference", () => {
+  const infer = SalaryParser.inferCurrencyFromLocation;
+  assert.equal(infer("Toronto, Ontario, Canada"), "CAD");
+  assert.equal(infer("Warsaw, Poland"), "PLN");
+  assert.equal(infer("Milano (In sede)"), "EUR");
+  assert.equal(infer("Vimercate (MB)"), "EUR");
+  assert.equal(infer("London, UK"), "GBP");
+  assert.equal(infer("New York, NY"), "USD");
+  assert.equal(infer("Zurich, Switzerland"), "CHF");
+  assert.equal(infer("Anywhere"), "USD");
+  assert.equal(infer("Remote"), "USD");
+  assert.equal(infer("Atlantis"), null);
+});
+
+test("card native salary with LinkedIn /yr format", () => {
+  const parsed = SalaryParser.parseCardSalaryText("25K €/yr - 35K €/yr", {
+    defaultCurrency: "EUR",
+  });
+  assert.deepEqual(toComparable(parsed.info), [25000, 35000]);
+  assert.equal(parsed.info.currency, "EUR");
+  assert.equal(parsed.text, "25K €/yr - 35K €/yr");
+});
+
+test("card native salary with full currency and /yr", () => {
+  const parsed = SalaryParser.parseCardSalaryText("€40,000/yr - €55,000/yr", {
+    defaultCurrency: "EUR",
+  });
+  assert.deepEqual(toComparable(parsed.info), [40000, 55000]);
+});
+
+test("card bare standalone range uses default currency", () => {
+  const parsed = SalaryParser.parseCardSalaryText("30.000 - 45.000", {
+    defaultCurrency: "EUR",
+  });
+  assert.deepEqual(toComparable(parsed.info), [30000, 45000]);
+  assert.equal(parsed.info.currency, "EUR");
+});
+
+test("card metadata fields are ignored", () => {
+  const fields = [
+    "Pubblicata 2 settimane fa · Promosso",
+    "54 ex studenti lavorano qui",
+    "Hardware Test Engineer",
+    "Milano (In sede)",
+    "Valutazione attiva delle candidature",
+    "TÜV Rheinland Europe",
+  ];
+  for (const field of fields) {
+    assert.equal(
+      SalaryParser.parseCardSalaryText(field, { defaultCurrency: "EUR" }),
+      null,
+      `field should not match: ${field}`
+    );
+  }
+});
+
+test("card non-annual salary is ignored", () => {
+  assert.equal(
+    SalaryParser.parseCardSalaryText("€10/hour - €15/hour", { defaultCurrency: "EUR" }),
+    null
+  );
+  assert.equal(
+    SalaryParser.parseCardSalaryText("€2.800 al mese - €3.200 al mese", { defaultCurrency: "EUR" }),
+    null
   );
 });

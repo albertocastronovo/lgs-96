@@ -71,6 +71,27 @@
     return key.replace("job-card-component-ref-", "") || null;
   }
 
+  function getCardTextFields(card) {
+    const fields = [];
+    for (const p of card.querySelectorAll("p")) {
+      if (p.closest(`.${BADGE_CLASS}`)) continue;
+      const text = p.textContent.replace(/\s+/g, " ").trim();
+      if (text) fields.push(text);
+    }
+    return fields;
+  }
+
+  function resolveDefaultCurrency(locationText) {
+    const parser = globalThis.SalaryParser;
+    if (parser) {
+      const inferred = parser.inferCurrencyFromLocation(locationText);
+      if (inferred) return inferred;
+    }
+    const lang = (document.documentElement.lang || "").toLowerCase();
+    if (lang.startsWith("it")) return "EUR";
+    return "USD";
+  }
+
   function injectBadge(card) {
     if (card.querySelector(`.${BADGE_CLASS}`)) return;
 
@@ -80,9 +101,30 @@
     const titleWrapper = title.parentElement;
     if (!titleWrapper || titleWrapper === card) return;
 
+    const fields = getCardTextFields(card);
+    const locationText = fields[2] || "";
+    const defaultCurrency = resolveDefaultCurrency(locationText);
+
+    let cardMatch = null;
+    const parser = globalThis.SalaryParser;
+    if (parser) {
+      for (const field of fields) {
+        const parsed = parser.parseCardSalaryText(field, { defaultCurrency });
+        if (parsed) {
+          cardMatch = parsed;
+          break;
+        }
+      }
+    }
+
     const badge = createBadge();
     titleWrapper.insertAdjacentElement("afterend", badge);
-    enqueueSalaryCheck(badge, getJobId(card));
+
+    if (cardMatch) {
+      applySalaryInfo(badge, cardMatch.info, cardMatch.text);
+      return;
+    }
+    enqueueSalaryCheck(badge, getJobId(card), defaultCurrency);
   }
 
   function scan() {
@@ -110,10 +152,10 @@
   let dispatchTimer = null;
   let backoffUntil = 0;
 
-  function enqueueSalaryCheck(badge, jobId) {
+  function enqueueSalaryCheck(badge, jobId, defaultCurrency) {
     if (!badge || badge.dataset[QUEUED_FLAG] === "true") return;
     badge.dataset[QUEUED_FLAG] = "true";
-    taskQueue.push({ badge, jobId });
+    taskQueue.push({ badge, jobId, defaultCurrency });
     scheduleDispatch();
   }
 
@@ -144,7 +186,7 @@
 
   function runTask(task) {
     activeCount++;
-    checkSalaryForJob(task.jobId)
+    checkSalaryForJob(task.jobId, task.defaultCurrency)
       .then((info) => applySalaryInfo(task.badge, info))
       .catch(() => applyCheckError(task.badge))
       .finally(() => {
@@ -217,14 +259,16 @@
       .finally(() => clearTimeout(timeoutId));
   }
 
-  function findSalaryInfo(descriptionText) {
+  function findSalaryInfo(descriptionText, options) {
     const parser = globalThis.SalaryParser;
     if (!parser) throw new Error("salary parser unavailable");
-    return parser.findSalaryInfo(descriptionText);
+    return parser.findSalaryInfo(descriptionText, options);
   }
 
-  function checkSalaryForJob(jobId) {
-    return fetchJobDescription(jobId).then((descriptionText) => findSalaryInfo(descriptionText));
+  function checkSalaryForJob(jobId, defaultCurrency) {
+    return fetchJobDescription(jobId).then((descriptionText) =>
+      findSalaryInfo(descriptionText, { defaultCurrency, allowBareRange: true })
+    );
   }
 
   function swapSpinnerForLight(badge) {
@@ -237,11 +281,14 @@
     if (label) label.textContent = text;
   }
 
-  function applySalaryInfo(badge, info) {
+  function applySalaryInfo(badge, info, displayOverride) {
     if (!badge.isConnected) return;
 
     const parser = globalThis.SalaryParser;
-    const text = info && info.kind !== "none" && parser ? parser.formatSalary(info) : "";
+    let text = "";
+    if (info && info.kind !== "none") {
+      text = displayOverride || (parser ? parser.formatSalary(info) : "");
+    }
 
     let stateClass;
     let stateName;
