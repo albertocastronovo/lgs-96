@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "LGS-96",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "Flags LinkedIn job cards with salary-information status (Italian D.Lgs. 96/2026).",
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/jobs/search-results/*"],
-      "js": ["src/salary-parser.js", "src/content.js"],
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["src/routes.js", "src/salary-parser.js", "src/content.js"],
       "css": ["src/content.css"],
       "run_at": "document_idle"
     }

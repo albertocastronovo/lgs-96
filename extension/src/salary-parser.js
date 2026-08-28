@@ -303,6 +303,71 @@
     return { min: Math.min(a, b), max: Math.max(a, b) };
   }
 
+  const COMPACT_ANNUAL_NUM_SRC = "(?:\\d{1,3}(?:[.,]\\d{1,2})?)";
+  const COMPACT_ANNUAL_RE =
+    /(?:\/\s{0,2}(?:yr|year|anno)|\b(?:yr|year|anno|annual|yearly|annuo|annua)\b|\ba year\b|\bper year\b|all['’]anno|\bper anno\b)/i;
+
+  function toCompactAnnual(raw) {
+    const value = Number.parseFloat(String(raw).replace(",", "."));
+    if (!Number.isFinite(value) || value < 1 || value > 999) return null;
+    return Math.round(value * 1000);
+  }
+
+  function matchCompactAnnual(text) {
+    if (!COMPACT_ANNUAL_RE.test(text)) return null;
+    const numSrc = COMPACT_ANNUAL_NUM_SRC;
+    const annualSrc =
+      "(?:\\s{0,2}/\\s{0,2}(?:yr|year|anno)|\\s+(?:a year|per year|yearly|annual|annuo|annua|anno|all['’]anno|per anno)\\b)";
+    const tailSrc = "(?:\\s*(?:/\\s{0,2}(?:yr|year|anno))?\\s*(?:[·|].*)?)";
+
+    const rangeRe = new RegExp(
+      `^(${CUR_SRC})?\\s{0,3}(${numSrc})\\s{0,2}(${CUR_SRC})?${annualSrc}?` +
+        `\\s*(?:${SEP_SRC})\\s*` +
+        `(${CUR_SRC})?\\s{0,3}(${numSrc})\\s{0,2}(${CUR_SRC})?${annualSrc}?` +
+        `${tailSrc}$`,
+      "i"
+    );
+    const rangeMatch = rangeRe.exec(text);
+    if (rangeMatch) {
+      const currencyGroups = [
+        rangeMatch[1],
+        rangeMatch[3],
+        rangeMatch[4],
+        rangeMatch[6],
+      ]
+        .filter(Boolean)
+        .map(mapCurrency);
+      const distinct = [...new Set(currencyGroups)];
+      if (distinct.length !== 1) return null;
+      const a = toCompactAnnual(rangeMatch[2]);
+      const b = toCompactAnnual(rangeMatch[5]);
+      if (a === null || b === null) return null;
+      return {
+        info: { kind: "range", min: Math.min(a, b), max: Math.max(a, b), currency: distinct[0] },
+      };
+    }
+
+    const singleRe = new RegExp(
+      `^(${CUR_SRC})?\\s{0,3}(${numSrc})\\s{0,2}(${CUR_SRC})?${annualSrc}${tailSrc}$`,
+      "i"
+    );
+    const singleMatch = singleRe.exec(text);
+    if (singleMatch) {
+      const currencyGroups = [singleMatch[1], singleMatch[3]]
+        .filter(Boolean)
+        .map(mapCurrency);
+      const distinct = [...new Set(currencyGroups)];
+      if (distinct.length !== 1) return null;
+      const value = toCompactAnnual(singleMatch[2]);
+      if (value === null) return null;
+      return {
+        info: { kind: "single", amount: value, bound: "approx", currency: distinct[0] },
+      };
+    }
+
+    return null;
+  }
+
   function parseCardSalaryText(fieldText, options = {}) {
     const defaultCurrency = options.defaultCurrency || null;
     const normalized = normalizeText(fieldText).trim();
@@ -316,6 +381,9 @@
       if (info.kind === "none") return null;
       return { info, text: normalized };
     }
+
+    const compact = matchCompactAnnual(normalized);
+    if (compact) return { info: compact.info, text: normalized };
 
     if (!defaultCurrency) return null;
     const bare = matchStandaloneRange(normalized);

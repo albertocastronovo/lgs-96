@@ -163,6 +163,33 @@ test("card native salary with LinkedIn /yr format", () => {
   assert.equal(parsed.text, "25K €/yr - 35K €/yr");
 });
 
+test("compact annual card notation without K multiplier", () => {
+  const parsed = SalaryParser.parseCardSalaryText("26 €/anno - 28 €/anno", {
+    defaultCurrency: "EUR",
+  });
+  assert.deepEqual(toComparable(parsed.info), [26000, 28000]);
+  assert.equal(parsed.info.currency, "EUR");
+  assert.equal(parsed.text, "26 €/anno - 28 €/anno");
+});
+
+test("compact annual with NBSP and K suffix", () => {
+  const parsed = SalaryParser.parseCardSalaryText("24K\u00A0€/anno - 28K\u00A0€/anno", {
+    defaultCurrency: "EUR",
+  });
+  assert.deepEqual(toComparable(parsed.info), [24000, 28000]);
+});
+
+test("compact annual single value", () => {
+  const parsed = SalaryParser.parseCardSalaryText("€30/yr", { defaultCurrency: "EUR" });
+  assert.equal(parsed.info.kind, "single");
+  assert.deepEqual(toComparable(parsed.info), [30000]);
+});
+
+test("compact annual requires period marker", () => {
+  assert.equal(SalaryParser.parseCardSalaryText("26 - 28", { defaultCurrency: "EUR" }), null);
+  assert.equal(SalaryParser.parseCardSalaryText("€26 - €28", { defaultCurrency: "EUR" }), null);
+});
+
 test("card native salary with full currency and /yr", () => {
   const parsed = SalaryParser.parseCardSalaryText("€40,000/yr - €55,000/yr", {
     defaultCurrency: "EUR",
