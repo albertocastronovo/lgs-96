@@ -130,6 +130,14 @@ test("clear removes job entries but keeps the setting", async () => {
   assert.equal(await cache.getCacheSize(), 0);
 });
 
+test("cloud-sourced entries round-trip with cloud provenance", async () => {
+  install(createFakeChrome());
+  await cache.saveCachedResult("321", RANGE, null, "cloud");
+  const entry = await cache.getCachedResult("321");
+  assert.equal(entry.source, "cloud");
+  assert.deepEqual(entry.result, RANGE);
+});
+
 test("cache size counts only valid fresh entries", async () => {
   const fake = install(createFakeChrome());
   await cache.saveCachedResult("8", RANGE, null, "description");

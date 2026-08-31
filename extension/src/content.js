@@ -32,6 +32,8 @@
   const BROAD_RANGE_FACTOR = 2;
   const QUEUED_FLAG = "lgs96Queued";
   const LGS96_DEBUG = false;
+  const CLOUD_BATCH_WINDOW_MS = 250;
+  const CLOUD_MAX_BATCH_SIZE = 50;
 
   const JOB_POSTING_ENDPOINT = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/";
   const DESCRIPTION_SELECTOR = ".show-more-less-html__markup";
@@ -55,6 +57,8 @@
   let scanTimer = null;
   let backoffUntil = 0;
   const pendingFetchControllers = new Set();
+  const cloudQueue = [];
+  let cloudTimer = null;
 
   function getRoutes() {
     return globalThis.LgsRoutes;
@@ -293,6 +297,11 @@
       clearTimeout(scanTimer);
       scanTimer = null;
     }
+    if (cloudTimer !== null) {
+      clearTimeout(cloudTimer);
+      cloudTimer = null;
+    }
+    cloudQueue.length = 0;
     if (dispatchTimer !== null) {
       clearTimeout(dispatchTimer);
       dispatchTimer = null;
@@ -345,27 +354,183 @@
   }
 
   function attachOrEnqueueSalaryCheck(badge, jobId, defaultCurrency) {
-    const cache = globalThis.LgsCache;
-    const pending = jobId ? pendingChecks.get(jobId) : null;
-    if (pending) {
-      pending.badges.add(badge);
+    if (jobId) {
+      const pending = pendingChecks.get(jobId);
+      if (pending) {
+        pending.badges.add(badge);
+        badge.dataset[QUEUED_FLAG] = "true";
+        return;
+      }
       badge.dataset[QUEUED_FLAG] = "true";
+      const created = { badges: new Set([badge]), defaultCurrency, stage: "local" };
+      pendingChecks.set(jobId, created);
+      startLocalStage(jobId, created);
       return;
     }
-    if (!cache || !jobId) {
-      enqueueSalaryCheck(badge, jobId, defaultCurrency);
+    enqueueSalaryCheck(badge, jobId, defaultCurrency);
+  }
+
+  function startLocalStage(jobId, pending) {
+    const cache = globalThis.LgsCache;
+    if (!cache) {
+      startCloudStage(jobId, pending);
       return;
     }
     cache
       .getCachedResult(jobId)
       .then((entry) => {
+        if (pendingChecks.get(jobId) !== pending) return;
         if (entry) {
-          applySalaryInfo(badge, entry.result, entry.displayText || undefined);
+          applyPendingResult(jobId, pending, entry.result, entry.displayText || undefined);
           return;
         }
-        enqueueSalaryCheck(badge, jobId, defaultCurrency);
+        startCloudStage(jobId, pending);
       })
-      .catch(() => enqueueSalaryCheck(badge, jobId, defaultCurrency));
+      .catch(() => {
+        if (pendingChecks.get(jobId) !== pending) return;
+        startCloudStage(jobId, pending);
+      });
+  }
+
+  function startCloudStage(jobId, pending) {
+    if (pendingChecks.get(jobId) !== pending) return;
+    const cloud = globalThis.LgsCloudCache;
+    if (!cloud || !jobId) {
+      enqueueLinkedInStage(jobId, pending);
+      return;
+    }
+    cloud
+      .getCloudCacheEnabled()
+      .then((enabled) => {
+        if (pendingChecks.get(jobId) !== pending) return;
+        if (!enabled) {
+          enqueueLinkedInStage(jobId, pending);
+          return;
+        }
+        pending.stage = "cloud";
+        cloudQueue.push(jobId);
+        scheduleCloudFlush();
+      })
+      .catch(() => {
+        if (pendingChecks.get(jobId) !== pending) return;
+        enqueueLinkedInStage(jobId, pending);
+      });
+  }
+
+  function enqueueLinkedInStage(jobId, pending) {
+    if (pendingChecks.get(jobId) !== pending) return;
+    pending.stage = "linkedin";
+    taskQueue.push({ badge: null, jobId, defaultCurrency: pending.defaultCurrency });
+    scheduleDispatch();
+  }
+
+  function applyPendingResult(jobId, pending, info, displayOverride) {
+    const badges = [...pending.badges].filter((badge) => badge.isConnected);
+    if (badges.length === 0) {
+      pendingChecks.delete(jobId);
+      return;
+    }
+    for (const badge of badges) applySalaryInfo(badge, info, displayOverride);
+    pendingChecks.delete(jobId);
+  }
+
+  function scheduleCloudFlush() {
+    if (!active || cloudTimer !== null) return;
+    cloudTimer = setTimeout(() => {
+      cloudTimer = null;
+      flushCloudBatches();
+    }, CLOUD_BATCH_WINDOW_MS);
+  }
+
+  function flushCloudBatches() {
+    const cloud = globalThis.LgsCloudCache;
+    if (!cloud) {
+      drainCloudQueueToLinkedIn();
+      return;
+    }
+    cloud
+      .getCloudCacheEnabled()
+      .then((enabled) => {
+        if (!enabled) {
+          drainCloudQueueToLinkedIn();
+          return;
+        }
+        const batch = takeCloudBatch(cloud.MAX_BATCH_SIZE);
+        if (batch.length === 0) return;
+        sendCloudLookup(batch, cloud);
+        if (cloudQueue.length > 0) scheduleCloudFlush();
+      })
+      .catch(() => drainCloudQueueToLinkedIn());
+  }
+
+  function takeCloudBatch(limit) {
+    const max =
+      Number.isFinite(limit) && limit > 0 ? limit : CLOUD_MAX_BATCH_SIZE;
+    const batch = [];
+    while (batch.length < max && cloudQueue.length > 0) {
+      const jobId = cloudQueue.shift();
+      const pending = pendingChecks.get(jobId);
+      if (pending && pending.stage === "cloud") batch.push(jobId);
+    }
+    return batch;
+  }
+
+  function drainCloudQueueToLinkedIn() {
+    const ids = cloudQueue.splice(0, cloudQueue.length);
+    for (const jobId of ids) {
+      const pending = pendingChecks.get(jobId);
+      if (pending && pending.stage === "cloud") enqueueLinkedInStage(jobId, pending);
+    }
+  }
+
+  function sendCloudLookup(batch, cloud) {
+    sendRuntimeMessage({ type: cloud.MSG_TYPE, jobIds: batch })
+      .then((response) =>
+        cloud
+          .getCloudCacheEnabled()
+          .then((stillEnabled) => ({ response, stillEnabled }))
+          .catch(() => ({ response, stillEnabled: false }))
+      )
+      .then(({ response, stillEnabled }) => {
+        const hits =
+          stillEnabled && response && response.ok === true ? response.hits || {} : null;
+        completeCloudBatch(batch, hits, cloud);
+      })
+      .catch(() => completeCloudBatch(batch, null, cloud));
+  }
+
+  function completeCloudBatch(batch, hits, cloud) {
+    for (const jobId of batch) {
+      const pending = pendingChecks.get(jobId);
+      if (!pending || pending.stage !== "cloud") continue;
+      const raw = hits ? hits[jobId] : null;
+      const validated = raw ? cloud.validateHit(raw) : null;
+      if (validated) {
+        saveCloudHit(jobId, validated);
+        applyPendingResult(jobId, pending, validated);
+      } else {
+        enqueueLinkedInStage(jobId, pending);
+      }
+    }
+  }
+
+  function saveCloudHit(jobId, result) {
+    const cache = globalThis.LgsCache;
+    if (!cache) return;
+    cache.saveCachedResult(jobId, result, null, "cloud").catch(() => {});
+  }
+
+  function sendRuntimeMessage(message) {
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage(message, (response) => {
+          const error = chrome.runtime.lastError;
+          resolve(error ? null : response || null);
+        });
+      } catch (error) {
+        resolve(null);
+      }
+    });
   }
 
   function enqueueSalaryCheck(badge, jobId, defaultCurrency) {

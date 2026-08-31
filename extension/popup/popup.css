@@ -44,6 +44,18 @@ body {
   justify-content: flex-start;
 }
 
+.popup__preview-tag {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #7a8b99;
+  border: 1px solid #c6d3dd;
+  border-radius: 999px;
+  padding: 1px 5px;
+  margin-left: 5px;
+}
+
 .switch {
   position: relative;
   display: inline-block;

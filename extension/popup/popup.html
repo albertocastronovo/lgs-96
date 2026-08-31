@@ -20,6 +20,16 @@
       </label>
     </section>
 
+    <section class="popup__row">
+      <label class="popup__row-label" for="cloud-toggle"
+        >Cloud cache<span class="popup__preview-tag">preview</span></label
+      >
+      <label class="switch">
+        <input type="checkbox" id="cloud-toggle" role="switch" />
+        <span class="switch__track"><span class="switch__thumb"></span></span>
+      </label>
+    </section>
+
     <section class="popup__row popup__row--muted">
       <span id="cache-count">Cached jobs: …</span>
     </section>
@@ -28,6 +38,7 @@
   </main>
 
   <script src="../src/cache.js"></script>
+  <script src="../src/cloud-cache.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

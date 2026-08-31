@@ -57,7 +57,9 @@
         Number.isFinite(entry.savedAt) &&
         isValidResult(entry.result) &&
         (entry.displayText === null || typeof entry.displayText === "string") &&
-        (entry.source === "card" || entry.source === "description")
+        (entry.source === "card" ||
+          entry.source === "description" ||
+          entry.source === "cloud")
     );
   }
 
@@ -114,7 +116,8 @@
         savedAt: Date.now(),
         result,
         displayText: typeof displayText === "string" && displayText ? displayText : null,
-        source: source === "card" ? "card" : "description",
+        source:
+          source === "card" ? "card" : source === "cloud" ? "cloud" : "description",
       };
       await local.set({ [jobKey(jobId)]: entry });
       return true;
