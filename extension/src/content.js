@@ -49,6 +49,7 @@
   let pollTimer = null;
 
   const taskQueue = [];
+  const pendingChecks = new Map();
   let activeCount = 0;
   let dispatchTimer = null;
   let scanTimer = null;
@@ -244,9 +245,10 @@
 
     if (cardMatch) {
       applySalaryInfo(badge, cardMatch.info, cardMatch.text);
+      saveCardSalaryCache(adapter.jobId, cardMatch.info, cardMatch.text);
       return;
     }
-    enqueueSalaryCheck(badge, adapter.jobId, defaultCurrency);
+    attachOrEnqueueSalaryCheck(badge, adapter.jobId, defaultCurrency);
   }
 
   function safeInjectBadge(card) {
@@ -286,6 +288,7 @@
 
   function clearRouteWork(removeAllBadges) {
     taskQueue.length = 0;
+    pendingChecks.clear();
     if (scanTimer !== null) {
       clearTimeout(scanTimer);
       scanTimer = null;
@@ -335,9 +338,46 @@
     pollTimer = setInterval(onPollTick, POLL_INTERVAL_MS);
   }
 
+  function saveCardSalaryCache(jobId, info, displayText) {
+    const cache = globalThis.LgsCache;
+    if (!cache) return;
+    cache.saveCachedResult(jobId, info, displayText, "card").catch(() => {});
+  }
+
+  function attachOrEnqueueSalaryCheck(badge, jobId, defaultCurrency) {
+    const cache = globalThis.LgsCache;
+    const pending = jobId ? pendingChecks.get(jobId) : null;
+    if (pending) {
+      pending.badges.add(badge);
+      badge.dataset[QUEUED_FLAG] = "true";
+      return;
+    }
+    if (!cache || !jobId) {
+      enqueueSalaryCheck(badge, jobId, defaultCurrency);
+      return;
+    }
+    cache
+      .getCachedResult(jobId)
+      .then((entry) => {
+        if (entry) {
+          applySalaryInfo(badge, entry.result, entry.displayText || undefined);
+          return;
+        }
+        enqueueSalaryCheck(badge, jobId, defaultCurrency);
+      })
+      .catch(() => enqueueSalaryCheck(badge, jobId, defaultCurrency));
+  }
+
   function enqueueSalaryCheck(badge, jobId, defaultCurrency) {
     if (!badge || badge.dataset[QUEUED_FLAG] === "true") return;
     badge.dataset[QUEUED_FLAG] = "true";
+
+    const pending = jobId ? pendingChecks.get(jobId) : null;
+    if (pending) {
+      pending.badges.add(badge);
+      return;
+    }
+    if (jobId) pendingChecks.set(jobId, { badges: new Set([badge]), defaultCurrency });
     taskQueue.push({ badge, jobId, defaultCurrency });
     scheduleDispatch();
   }
@@ -361,18 +401,37 @@
     while (activeCount < MAX_CONCURRENT_CHECKS) {
       const task = taskQueue.shift();
       if (!task) break;
-      if (!task.badge.isConnected) continue;
       runTask(task);
       break;
     }
   }
 
+  function pendingBadges(pending, task) {
+    const badges = pending ? [...pending.badges] : [];
+    if (task.badge) badges.push(task.badge);
+    return badges.filter((badge) => badge.isConnected);
+  }
+
   function runTask(task) {
+    const pending = task.jobId ? pendingChecks.get(task.jobId) : null;
+    if (pendingBadges(pending, task).length === 0) {
+      if (task.jobId) pendingChecks.delete(task.jobId);
+      if (taskQueue.length > 0) scheduleDispatch();
+      return;
+    }
+
     activeCount++;
     checkSalaryForJob(task.jobId, task.defaultCurrency)
-      .then((info) => applySalaryInfo(task.badge, info))
-      .catch(() => applyCheckError(task.badge))
+      .then(async (info) => {
+        const cache = globalThis.LgsCache;
+        if (cache) await cache.saveCachedResult(task.jobId, info, null, "description").catch(() => {});
+        for (const badge of pendingBadges(pending, task)) applySalaryInfo(badge, info);
+      })
+      .catch(() => {
+        for (const badge of pendingBadges(pending, task)) applyCheckError(badge);
+      })
       .finally(() => {
+        if (task.jobId) pendingChecks.delete(task.jobId);
         activeCount--;
         if (taskQueue.length > 0) scheduleDispatch();
       });

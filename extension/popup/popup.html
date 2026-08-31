@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LGS-96</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <main class="popup">
+    <header class="popup__header">
+      <span class="popup__brand">LGS-96</span>
+      <span class="popup__subtitle">D.Lgs. 96/2026 salary flags</span>
+    </header>
+
+    <section class="popup__row">
+      <label class="popup__row-label" for="cache-toggle">Local cache</label>
+      <label class="switch">
+        <input type="checkbox" id="cache-toggle" role="switch" />
+        <span class="switch__track"><span class="switch__thumb"></span></span>
+      </label>
+    </section>
+
+    <section class="popup__row popup__row--muted">
+      <span id="cache-count">Cached jobs: …</span>
+    </section>
+
+    <button type="button" id="clear-cache" class="popup__button">Clear cache</button>
+  </main>
+
+  <script src="../src/cache.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
