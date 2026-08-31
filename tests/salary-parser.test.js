@@ -46,6 +46,36 @@ test("currencyless fixture without defaults stays unrecognized", () => {
   assert.deepEqual(toComparable(SalaryParser.findSalaryInfo(record.description)), []);
 });
 
+test("bare RAL single value defaults to EUR", () => {
+  const record = fixtures.find((r) => r.description.includes("incentivo produttività"));
+  const info = SalaryParser.findSalaryInfo(record.description, {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.equal(info.kind, "single");
+  assert.equal(info.amount, 28000);
+  assert.equal(info.bound, "approx");
+  assert.equal(info.currency, "EUR");
+});
+
+test("incentive amount is not treated as open-ended minimum", () => {
+  const info = SalaryParser.findSalaryInfo("RAL 28.000 + 1750 incentivo produttività", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), [28000]);
+  assert.equal(info.bound, "approx");
+});
+
+test("range promised before interview stays unrecognized", () => {
+  const record = fixtures.find((r) => r.description.includes("verrà sempre condiviso"));
+  const info = SalaryParser.findSalaryInfo(record.description, {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), []);
+});
+
 test("USD annual range", () => {
   const info = SalaryParser.findSalaryInfo("Compensation: $85,000 - $110,000 per year");
   assert.equal(info.kind, "range");

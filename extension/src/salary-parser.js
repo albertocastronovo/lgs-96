@@ -177,8 +177,8 @@
 
   function detectBound(line, start, end) {
     const before = line.slice(0, start);
-    const after = line.slice(end, end + 4);
-    if (/^\s*\+/.test(after)) return "min";
+    const after = line.slice(end, end + 8);
+    if (/^\s*\+(?!\s*\d)/.test(after)) return "min";
     if (/(?:\bfino a|\bentro\b|\bup to\b|\bun massimo di\b|\bmassimo\b|\bmax\b|\bmeno di\b)\s*$/i.test(before)) {
       return "max";
     }
@@ -224,7 +224,15 @@
     );
     while ((m = tokenRe.exec(line)) !== null) {
       const currencyRaw = m[1] || m[3];
-      if (!currencyRaw) continue;
+      let bare = false;
+      let currency;
+      if (currencyRaw) {
+        currency = mapCurrency(currencyRaw);
+      } else {
+        if (!options.allowBare || !options.defaultCurrency || !options.hasContext) continue;
+        bare = true;
+        currency = options.defaultCurrency;
+      }
       const start = m.index;
       const end = tokenRe.lastIndex;
       if (spans.some(([s, e]) => start < e && end > s)) continue;
@@ -234,8 +242,8 @@
         kind: "single",
         value,
         bound: detectBound(line, start, end),
-        currency: mapCurrency(currencyRaw),
-        bare: false,
+        currency,
+        bare,
       });
     }
   }
