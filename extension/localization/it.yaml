@@ -1,0 +1,21 @@
+# Catalogo italiano - DA COMPLETARE (volutamente vuoto).
+# Finche' questo catalogo non conterra' tutte le chiavi richieste (vedi en.yaml),
+# la lingua italiana non apparira' nel menu di selezione.
+# Usa la stessa sintassi di en.yaml: chiave: "valore"
+
+language_name: "Italiano"
+extension_name: "LGS-96"
+extension_description: "Anticipa le informazioni sulla RAL negli annunci di LinkedIn (D.Lgs. 96/2026)."
+extension_action_title: "LGS-96"
+popup_document_title: "LGS-96"
+popup_subtitle: "Impostazioni"
+popup_language_label: "Lingua"
+popup_local_cache: "Cache locale"
+popup_cloud_cache: "Cache cloud"
+popup_preview: "anteprima"
+popup_cached_jobs: "Inserzioni nella cache: {count}"
+popup_cache_unavailable: "Cache non disponibile"
+popup_clear_cache: "Pulisci cache"
+badge_loading: "Sto cercando la RAL..."
+badge_none: "Nessuna RAL"
+badge_error: "Lettura RAL fallita"

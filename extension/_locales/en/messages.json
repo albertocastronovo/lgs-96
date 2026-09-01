@@ -1,0 +1,50 @@
+{
+  "language_name": {
+    "message": "English"
+  },
+  "extension_name": {
+    "message": "LGS-96"
+  },
+  "extension_description": {
+    "message": "Flags LinkedIn job cards with salary-information status (Italian D.Lgs. 96/2026)."
+  },
+  "extension_action_title": {
+    "message": "LGS-96"
+  },
+  "popup_document_title": {
+    "message": "LGS-96"
+  },
+  "popup_subtitle": {
+    "message": "Settings"
+  },
+  "popup_language_label": {
+    "message": "Language"
+  },
+  "popup_local_cache": {
+    "message": "Local cache"
+  },
+  "popup_cloud_cache": {
+    "message": "Cloud cache"
+  },
+  "popup_preview": {
+    "message": "preview"
+  },
+  "popup_cached_jobs": {
+    "message": "Cached jobs: {count}"
+  },
+  "popup_cache_unavailable": {
+    "message": "Cache unavailable"
+  },
+  "popup_clear_cache": {
+    "message": "Clear cache"
+  },
+  "badge_loading": {
+    "message": "Fetching salary info..."
+  },
+  "badge_none": {
+    "message": "No salary info"
+  },
+  "badge_error": {
+    "message": "Salary check failed"
+  }
+}

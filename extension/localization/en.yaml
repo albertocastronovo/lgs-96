@@ -1,0 +1,19 @@
+# LGS-96 localization catalog: English (required baseline for every other catalog).
+# Flat format: `key: "value"` (double quotes required, one space after the colon).
+# Lines starting with # are comments; blank lines are ignored. Escapes: \" and \\.
+language_name: "English"
+extension_name: "LGS-96"
+extension_description: "Flags LinkedIn job cards with salary-information status (Italian D.Lgs. 96/2026)."
+extension_action_title: "LGS-96"
+popup_document_title: "LGS-96"
+popup_subtitle: "Settings"
+popup_language_label: "Language"
+popup_local_cache: "Local cache"
+popup_cloud_cache: "Cloud cache"
+popup_preview: "preview"
+popup_cached_jobs: "Cached jobs: {count}"
+popup_cache_unavailable: "Cache unavailable"
+popup_clear_cache: "Clear cache"
+badge_loading: "Fetching salary info..."
+badge_none: "No salary info"
+badge_error: "Salary check failed"

@@ -17,9 +17,9 @@
   const STATE_BROAD = "lgs96-badge--broad";
   const STATE_ERROR = "lgs96-badge--error";
 
-  const LOADING_TEXT = "Fetching salary info";
-  const NO_SALARY_TEXT = "No salary info";
-  const ERROR_TEXT = "Salary check failed";
+  const LOADING_TEXT_KEY = "badge_loading";
+  const NO_SALARY_TEXT_KEY = "badge_none";
+  const ERROR_TEXT_KEY = "badge_error";
 
   const SCAN_DEBOUNCE_MS = 150;
   const POLL_INTERVAL_MS = 500;
@@ -59,6 +59,18 @@
   const pendingFetchControllers = new Set();
   const cloudQueue = [];
   let cloudTimer = null;
+  let localizationState = null;
+
+  function loc(key, params) {
+    const localization = globalThis.LgsLocalization;
+    if (!localization) return "";
+    return localization.textFromCatalogs(
+      localizationState ? localizationState.catalogs : null,
+      localizationState ? localizationState.language : localization.DEFAULT_LOCALE,
+      key,
+      params
+    );
+  }
 
   function getRoutes() {
     return globalThis.LgsRoutes;
@@ -73,6 +85,7 @@
     const badge = document.createElement("div");
     badge.className = `${BADGE_CLASS} ${STATE_LOADING}`;
     badge.setAttribute("role", "status");
+    badge.dataset.lgs96State = "loading";
 
     const spinner = document.createElement("span");
     spinner.className = SPINNER_CLASS;
@@ -80,7 +93,7 @@
 
     const label = document.createElement("span");
     label.className = LABEL_CLASS;
-    label.textContent = LOADING_TEXT;
+    label.textContent = loc(LOADING_TEXT_KEY);
 
     badge.append(spinner, label);
     return badge;
@@ -707,7 +720,7 @@
     if (!text) {
       stateClass = STATE_NONE;
       stateName = "none";
-      labelText = NO_SALARY_TEXT;
+      labelText = loc(NO_SALARY_TEXT_KEY);
     } else if (info.kind === "single") {
       stateClass = STATE_BROAD;
       stateName = "open";
@@ -735,8 +748,64 @@
     badge.dataset.lgs96State = "error";
 
     swapSpinnerForLight(badge);
-    setBadgeText(badge, ERROR_TEXT);
+    setBadgeText(badge, loc(ERROR_TEXT_KEY));
   }
 
-  start();
+  function fetchLocalizationState() {
+    const localization = globalThis.LgsLocalization;
+    if (!localization) return Promise.resolve(null);
+    return sendRuntimeMessage({ type: localization.MSG_TYPE }).then((response) => {
+      if (response && response.ok && response.catalogs) {
+        return { catalogs: response.catalogs, language: response.language };
+      }
+      return null;
+    });
+  }
+
+  function relabelBadges() {
+    const stateKeys = {
+      loading: LOADING_TEXT_KEY,
+      none: NO_SALARY_TEXT_KEY,
+      error: ERROR_TEXT_KEY,
+    };
+    document.querySelectorAll(`.${BADGE_CLASS}`).forEach((badge) => {
+      const key = stateKeys[badge.dataset.lgs96State];
+      if (key) setBadgeText(badge, loc(key));
+    });
+  }
+
+  function watchLanguageChanges() {
+    const localization = globalThis.LgsLocalization;
+    if (
+      !localization ||
+      typeof chrome === "undefined" ||
+      !chrome.storage ||
+      !chrome.storage.onChanged
+    ) {
+      return;
+    }
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes[localization.SETTING_KEY]) return;
+      fetchLocalizationState()
+        .then((state) => {
+          if (state) localizationState = state;
+          relabelBadges();
+        })
+        .catch(() => {});
+    });
+  }
+
+  function bootstrap() {
+    fetchLocalizationState()
+      .then((state) => {
+        if (state) localizationState = state;
+      })
+      .catch(() => {})
+      .then(() => {
+        start();
+        watchLanguageChanges();
+      });
+  }
+
+  bootstrap();
 })();

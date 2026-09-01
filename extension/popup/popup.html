@@ -2,18 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>LGS-96</title>
+  <title></title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <main class="popup">
     <header class="popup__header">
-      <span class="popup__brand">LGS-96</span>
-      <span class="popup__subtitle">D.Lgs. 96/2026 salary flags</span>
+      <span class="popup__brand" id="popup-brand"></span>
+      <span class="popup__subtitle" id="popup-subtitle"></span>
     </header>
 
     <section class="popup__row">
-      <label class="popup__row-label" for="cache-toggle">Local cache</label>
+      <label class="popup__row-label" for="language-select" id="language-label"></label>
+      <select id="language-select" class="popup__select"></select>
+    </section>
+
+    <section class="popup__row">
+      <label class="popup__row-label" for="cache-toggle" id="local-cache-label"></label>
       <label class="switch">
         <input type="checkbox" id="cache-toggle" role="switch" />
         <span class="switch__track"><span class="switch__thumb"></span></span>
@@ -22,7 +27,7 @@
 
     <section class="popup__row">
       <label class="popup__row-label" for="cloud-toggle"
-        >Cloud cache<span class="popup__preview-tag">preview</span></label
+        ><span id="cloud-cache-text"></span><span class="popup__preview-tag" id="cloud-preview"></span></label
       >
       <label class="switch">
         <input type="checkbox" id="cloud-toggle" role="switch" />
@@ -31,14 +36,15 @@
     </section>
 
     <section class="popup__row popup__row--muted">
-      <span id="cache-count">Cached jobs: …</span>
+      <span id="cache-count"></span>
     </section>
 
-    <button type="button" id="clear-cache" class="popup__button">Clear cache</button>
+    <button type="button" id="clear-cache" class="popup__button"></button>
   </main>
 
   <script src="../src/cache.js"></script>
   <script src="../src/cloud-cache.js"></script>
+  <script src="../src/localization.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -56,6 +56,17 @@ body {
   margin-left: 5px;
 }
 
+.popup__select {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 4px;
+  border: 1px solid #c6d3dd;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #38434f;
+}
+
 .switch {
   position: relative;
   display: inline-block;

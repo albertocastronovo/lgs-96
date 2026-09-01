@@ -1,0 +1,50 @@
+{
+  "language_name": {
+    "message": "Italiano"
+  },
+  "extension_name": {
+    "message": "LGS-96"
+  },
+  "extension_description": {
+    "message": "Anticipa le informazioni sulla RAL negli annunci di LinkedIn (D.Lgs. 96/2026)."
+  },
+  "extension_action_title": {
+    "message": "LGS-96"
+  },
+  "popup_document_title": {
+    "message": "LGS-96"
+  },
+  "popup_subtitle": {
+    "message": "Impostazioni"
+  },
+  "popup_language_label": {
+    "message": "Lingua"
+  },
+  "popup_local_cache": {
+    "message": "Cache locale"
+  },
+  "popup_cloud_cache": {
+    "message": "Cache cloud"
+  },
+  "popup_preview": {
+    "message": "anteprima"
+  },
+  "popup_cached_jobs": {
+    "message": "Inserzioni nella cache: {count}"
+  },
+  "popup_cache_unavailable": {
+    "message": "Cache non disponibile"
+  },
+  "popup_clear_cache": {
+    "message": "Pulisci cache"
+  },
+  "badge_loading": {
+    "message": "Sto cercando la RAL..."
+  },
+  "badge_none": {
+    "message": "Nessuna RAL"
+  },
+  "badge_error": {
+    "message": "Lettura RAL fallita"
+  }
+}
