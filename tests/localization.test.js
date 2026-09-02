@@ -54,11 +54,28 @@ test("english catalog parses without errors and contains every required key", ()
   }
 });
 
-test("italian placeholder parses but is not yet a selectable catalog", () => {
+test("italian catalog is complete, valid and selectable", () => {
   assert.deepEqual(itBuilt.errors, []);
-  assert.deepEqual(itBuilt.entries, {});
-  assert.equal(itBuilt.valid, false);
-  assert.deepEqual(itBuilt.missing, loc.REQUIRED_KEYS);
+  assert.equal(itBuilt.valid, true);
+  assert.equal(itBuilt.languageName, "Italiano");
+  for (const key of loc.REQUIRED_KEYS) {
+    assert.equal(typeof itBuilt.entries[key], "string", key);
+    assert.ok(itBuilt.entries[key].length > 0, key);
+  }
+});
+
+test("salary-not-detected wording replaces definitive absence", () => {
+  assert.equal(enBuilt.entries.badge_none, "Salary not detected");
+  assert.equal(itBuilt.entries.badge_none, "RAL non rilevata");
+});
+
+test("cloud cache is presented as coming soon in both catalogs", () => {
+  assert.equal(enBuilt.entries.popup_cloud_coming_soon, "Coming soon");
+  assert.equal(itBuilt.entries.popup_cloud_coming_soon, "Prossimamente");
+});
+
+test("built-in fallback matches the english yaml exactly", () => {
+  assert.deepEqual(loc.FALLBACK_CATALOG, enBuilt.entries);
 });
 
 test("parser accepts comments, blank lines and escaped quotes", () => {
@@ -76,7 +93,7 @@ test("parser rejects invalid syntax", () => {
   );
   assert.deepEqual(parsed.entries, { good: "yes" });
   assert.equal(parsed.errors.length, 3);
-  const built = loc.buildCatalog("en", "good: \"yes\"\nbroken line\n");
+  const built = loc.buildCatalog("en", 'good: "yes"\nbroken line\n');
   assert.equal(built.valid, false);
 });
 
@@ -106,11 +123,11 @@ test("interpolation replaces known params and keeps unknown ones", () => {
   assert.equal(loc.interpolate("{a}{b}", { a: 1, b: "x" }), "1x");
 });
 
-test("selectCatalogs keeps only valid catalogs", () => {
+test("selectCatalogs keeps every valid catalog", () => {
   const { catalogs, available } = loc.selectCatalogs([enBuilt, itBuilt, null]);
-  assert.deepEqual(available, ["en"]);
+  assert.deepEqual(available, ["en", "it"]);
   assert.deepEqual(catalogs.en, enBuilt.entries);
-  assert.equal(catalogs.it, undefined);
+  assert.deepEqual(catalogs.it, itBuilt.entries);
 });
 
 test("resolveActive prefers stored, then default, then first available", () => {
@@ -125,7 +142,7 @@ test("textFromCatalogs resolves selected, then default, then builtin fallback", 
   assert.equal(loc.textFromCatalogs(catalogs, "en", "badge_none"), "Niente");
   assert.equal(
     loc.textFromCatalogs(catalogs, "en", "badge_loading"),
-    "Fetching salary info"
+    "Fetching salary info..."
   );
   assert.equal(
     loc.textFromCatalogs(catalogs, "en", "popup_cached_jobs", { count: 2 }),
@@ -160,18 +177,24 @@ test("language defaults to english without storage", async () => {
   }
 });
 
-test("generated chrome locales match the yaml catalogs", () => {
-  const messagesPath = path.join(root, "extension", "_locales", "en", "messages.json");
-  const messages = JSON.parse(fs.readFileSync(messagesPath, "utf8"));
-  for (const [key, value] of Object.entries(enBuilt.entries)) {
-    assert.equal(messages[key].message, value, key);
+test("generated chrome locales match every yaml catalog", () => {
+  for (const built of [enBuilt, itBuilt]) {
+    const messagesPath = path.join(
+      root,
+      "extension",
+      "_locales",
+      built.locale,
+      "messages.json"
+    );
+    const messages = JSON.parse(fs.readFileSync(messagesPath, "utf8"));
+    for (const [key, value] of Object.entries(built.entries)) {
+      assert.equal(messages[key].message, value, `${built.locale}:${key}`);
+    }
+    assert.deepEqual(generator.buildMessagesForCatalog(built.entries), messages);
   }
-  assert.equal(fs.existsSync(path.join(root, "extension", "_locales", "it")), false);
-  const generated = generator.buildMessagesForCatalog(enBuilt.entries);
-  assert.deepEqual(generated, messages);
 });
 
-test("manifest uses chrome locale placeholders and the new version", () => {
+test("manifest packages the MVP: no cloud, feedback reporting enabled", () => {
   const manifest = JSON.parse(
     fs.readFileSync(path.join(root, "extension", "manifest.json"), "utf8")
   );
@@ -179,6 +202,25 @@ test("manifest uses chrome locale placeholders and the new version", () => {
   assert.equal(manifest.name, "__MSG_extension_name__");
   assert.equal(manifest.description, "__MSG_extension_description__");
   assert.equal(manifest.action.default_title, "__MSG_extension_action_title__");
-  assert.equal(manifest.version, "0.10.0");
-  assert.ok(manifest.content_scripts[0].js.includes("src/localization.js"));
+  assert.equal(manifest.version, "0.11.1");
+  assert.deepEqual(manifest.host_permissions, ["https://formsubmit.co/*"]);
+
+  const scripts = manifest.content_scripts[0].js;
+  assert.ok(scripts.includes("src/feedback.js"), "feedback.js loaded");
+  assert.ok(scripts.includes("src/scheduler.js"), "scheduler.js loaded");
+  assert.ok(scripts.includes("src/localization.js"), "localization.js loaded");
+  assert.equal(scripts.includes("src/cloud-cache.js"), false, "cloud-cache.js not loaded");
+});
+
+test("popup hard-disables cloud cache and drops its module", () => {
+  const html = fs.readFileSync(
+    path.join(root, "extension", "popup", "popup.html"),
+    "utf8"
+  );
+  assert.equal(/input[^>]*id="cloud-toggle"/.test(html), false);
+  assert.equal(html.includes("src/cloud-cache.js"), false);
+  assert.ok(html.includes('id="cloud-preview"'), "coming-soon tag present");
+  assert.ok(html.includes("popup__row--disabled"), "cloud row disabled");
+  assert.ok(html.includes('id="popup-disclaimer"'), "disclaimer present");
+  assert.ok(html.indexOf("language-select") < html.indexOf("cache-toggle"), "language first");
 });

@@ -12,6 +12,8 @@
       <span class="popup__subtitle" id="popup-subtitle"></span>
     </header>
 
+    <p class="popup__disclaimer" id="popup-disclaimer"></p>
+
     <section class="popup__row">
       <label class="popup__row-label" for="language-select" id="language-label"></label>
       <select id="language-select" class="popup__select"></select>
@@ -25,14 +27,13 @@
       </label>
     </section>
 
-    <section class="popup__row">
-      <label class="popup__row-label" for="cloud-toggle"
-        ><span id="cloud-cache-text"></span><span class="popup__preview-tag" id="cloud-preview"></span></label
+    <section class="popup__row popup__row--disabled">
+      <span class="popup__row-label" id="cloud-cache-label"
+        ><span id="cloud-cache-text"></span><span class="popup__preview-tag" id="cloud-preview"></span></span
       >
-      <label class="switch">
-        <input type="checkbox" id="cloud-toggle" role="switch" />
+      <span class="switch switch--disabled" aria-hidden="true">
         <span class="switch__track"><span class="switch__thumb"></span></span>
-      </label>
+      </span>
     </section>
 
     <section class="popup__row popup__row--muted">
@@ -43,7 +44,6 @@
   </main>
 
   <script src="../src/cache.js"></script>
-  <script src="../src/cloud-cache.js"></script>
   <script src="../src/localization.js"></script>
   <script src="popup.js"></script>
 </body>

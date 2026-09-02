@@ -67,6 +67,39 @@ test("incentive amount is not treated as open-ended minimum", () => {
   assert.equal(info.bound, "approx");
 });
 
+test("signing bonus is excluded from salary aggregation", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Compensation Salary: $150,000–$250,000 USD $20,000 signing bonus 4 weeks vacation + country-specific holidays Fully remote"
+  );
+  assert.equal(info.currency, "USD");
+  assert.deepEqual(toComparable(info), [150000, 250000]);
+});
+
+test("signing bonus before the salary does not pollute the range", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Signing bonus: $20,000. Salary: $150,000-$250,000."
+  );
+  assert.deepEqual(toComparable(info), [150000, 250000]);
+});
+
+test("salary plus bonus clause keeps the salary value", () => {
+  const info = SalaryParser.findSalaryInfo("Salary: $100,000 plus a performance bonus.");
+  assert.deepEqual(toComparable(info), [100000]);
+});
+
+test("italian bonus amounts are excluded", () => {
+  const info = SalaryParser.findSalaryInfo("Retribuzione: 30.000€ di bonus annuale.");
+  assert.deepEqual(toComparable(info), []);
+});
+
+test("productivity incentive clause keeps the RAL value", () => {
+  const info = SalaryParser.findSalaryInfo("RAL 40.000 EUR + incentivo produttività", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), [40000]);
+});
+
 test("range promised before interview stays unrecognized", () => {
   const record = fixtures.find((r) => r.description.includes("verrà sempre condiviso"));
   const info = SalaryParser.findSalaryInfo(record.description, {

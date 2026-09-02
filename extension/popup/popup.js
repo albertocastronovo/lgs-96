@@ -2,18 +2,17 @@
   "use strict";
 
   const cache = globalThis.LgsCache;
-  const cloudCache = globalThis.LgsCloudCache;
   const localization = globalThis.LgsLocalization;
 
   const brand = document.getElementById("popup-brand");
   const subtitle = document.getElementById("popup-subtitle");
+  const disclaimer = document.getElementById("popup-disclaimer");
   const languageLabel = document.getElementById("language-label");
   const languageSelect = document.getElementById("language-select");
   const localCacheLabel = document.getElementById("local-cache-label");
   const cloudCacheText = document.getElementById("cloud-cache-text");
   const cloudPreview = document.getElementById("cloud-preview");
   const toggle = document.getElementById("cache-toggle");
-  const cloudToggle = document.getElementById("cloud-toggle");
   const countLabel = document.getElementById("cache-count");
   const clearButton = document.getElementById("clear-cache");
 
@@ -78,14 +77,16 @@
   }
 
   async function render() {
+    document.documentElement.lang = language === "it" ? "it" : "en";
     document.title = t("popup_document_title");
     brand.textContent = t("extension_name");
     subtitle.textContent = t("popup_subtitle");
+    disclaimer.textContent = t("popup_disclaimer");
     languageLabel.textContent = t("popup_language_label");
     renderLanguageOptions();
     localCacheLabel.textContent = t("popup_local_cache");
     cloudCacheText.textContent = t("popup_cloud_cache");
-    cloudPreview.textContent = t("popup_preview");
+    cloudPreview.textContent = t("popup_cloud_coming_soon");
     clearButton.textContent = t("popup_clear_cache");
     await refreshCount();
   }
@@ -93,7 +94,6 @@
   async function init() {
     if (!localization) {
       toggle.disabled = true;
-      cloudToggle.disabled = true;
       clearButton.disabled = true;
       countLabel.textContent = "Cache unavailable";
       return;
@@ -115,15 +115,6 @@
         await cache.clearCache();
         await refreshCount();
         clearButton.disabled = false;
-      });
-    }
-
-    if (!cloudCache) {
-      cloudToggle.disabled = true;
-    } else {
-      cloudToggle.checked = await cloudCache.getCloudCacheEnabled();
-      cloudToggle.addEventListener("change", async () => {
-        await cloudCache.setCloudCacheEnabled(cloudToggle.checked);
       });
     }
 

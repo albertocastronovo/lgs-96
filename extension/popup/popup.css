@@ -44,6 +44,26 @@ body {
   justify-content: flex-start;
 }
 
+.popup__disclaimer {
+  margin: 0;
+  font-size: 10px;
+  line-height: 13px;
+  color: #7a8b99;
+  font-weight: 500;
+}
+
+.popup__row--disabled {
+  opacity: 0.55;
+}
+
+.switch--disabled {
+  pointer-events: none;
+}
+
+.switch--disabled .switch__track {
+  background: #c6d3dd;
+}
+
 .popup__preview-tag {
   font-size: 9px;
   font-weight: 600;

@@ -14,5 +14,6 @@
   {"description": "Your base salary will be determined based on your location, experience, and the pay of employees in similar positions. For Poland: The base salary range is 292,500 PLN - 507,000 PLN for Level 4, and 375,000 PLN - 650,000 PLN for Level 5. , , JR2017366", "expected": [292500, 650000]},
   {"description": "We're pleased to share that the fixed salary range for this position is 30.000 - 45.000.", "expected": [30000, 45000]},
   {"description": "Inquadramento: Livello A2 del CCSL - RAL 28.000 + 1750 incentivo produttività", "expected": [28000]},
-  {"description": "Il range retributivo specifico verrà sempre condiviso prima dell’eventuale colloquio sulla base della valutazione del profilo effettuata dal team di reclutamento.", "expected": []}
+  {"description": "Il range retributivo specifico verrà sempre condiviso prima dell’eventuale colloquio sulla base della valutazione del profilo effettuata dal team di reclutamento.", "expected": []},
+  {"description": "Compensation Salary: $150,000–$250,000 USD $20,000 signing bonus 4 weeks vacation + country-specific holidays Fully remote", "expected": [150000, 250000]}
 ]

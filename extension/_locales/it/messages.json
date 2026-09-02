@@ -26,8 +26,11 @@
   "popup_cloud_cache": {
     "message": "Cache cloud"
   },
-  "popup_preview": {
-    "message": "anteprima"
+  "popup_cloud_coming_soon": {
+    "message": "Prossimamente"
+  },
+  "popup_disclaimer": {
+    "message": "I risultati sono estratti automaticamente e possono essere incompleti o errati."
   },
   "popup_cached_jobs": {
     "message": "Inserzioni nella cache: {count}"
@@ -42,9 +45,72 @@
     "message": "Sto cercando la RAL..."
   },
   "badge_none": {
-    "message": "Nessuna RAL"
+    "message": "RAL non rilevata"
   },
   "badge_error": {
     "message": "Lettura RAL fallita"
+  },
+  "badge_report_action": {
+    "message": "Segnala un risultato errato"
+  },
+  "feedback_reported": {
+    "message": "Risultato segnalato"
+  },
+  "feedback_title": {
+    "message": "Segnala un risultato errato"
+  },
+  "feedback_description": {
+    "message": "Segnalazione per l'offerta {jobId}. Dicci cosa contiene davvero l'annuncio."
+  },
+  "feedback_expected_label": {
+    "message": "Questa offerta contiene"
+  },
+  "feedback_expected_none": {
+    "message": "Nessuna informazione sulla retribuzione"
+  },
+  "feedback_expected_single": {
+    "message": "Un singolo valore di retribuzione"
+  },
+  "feedback_expected_range": {
+    "message": "Un intervallo di retribuzione"
+  },
+  "feedback_correction_label": {
+    "message": "Cosa dovrebbe mostrare? (max 50 caratteri)"
+  },
+  "feedback_correction_placeholder": {
+    "message": "es. 35k - 45k EUR"
+  },
+  "feedback_correction_required": {
+    "message": "Descrivi cosa dovrebbe mostrare l'annuncio."
+  },
+  "feedback_char_count": {
+    "message": "{count}/50"
+  },
+  "feedback_disclosure": {
+    "message": "L'invio manda l'ID dell'offerta e il tuo feedback tramite FormSubmit all'autore dell'estensione. Vedi l'informativa sulla privacy."
+  },
+  "feedback_privacy_link": {
+    "message": "Informativa sulla privacy"
+  },
+  "feedback_cancel": {
+    "message": "Annulla"
+  },
+  "feedback_submit": {
+    "message": "Invia"
+  },
+  "feedback_submitting": {
+    "message": "Invio in corso..."
+  },
+  "feedback_close": {
+    "message": "Chiudi"
+  },
+  "feedback_thanks_title": {
+    "message": "Grazie!"
+  },
+  "feedback_thanks": {
+    "message": "La tua segnalazione ci aiuta a rendere LGS-96 più preciso."
+  },
+  "feedback_error": {
+    "message": "Si è verificato un errore nell'invio della segnalazione. Riprova."
   }
 }

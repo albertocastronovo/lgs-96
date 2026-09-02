@@ -10,6 +10,7 @@
   const SPINNER_CLASS = "lgs96-badge__spinner";
   const LIGHT_CLASS = "lgs96-badge__light";
   const LABEL_CLASS = "lgs96-badge__label";
+  const FLAG_CLASS = "lgs96-badge__flag";
 
   const STATE_LOADING = "lgs96-badge--loading";
   const STATE_NONE = "lgs96-badge--none";
@@ -20,11 +21,18 @@
   const LOADING_TEXT_KEY = "badge_loading";
   const NO_SALARY_TEXT_KEY = "badge_none";
   const ERROR_TEXT_KEY = "badge_error";
+  const REPORT_ACTION_KEY = "badge_report_action";
+  const REPORTED_KEY = "feedback_reported";
+
+  const PRIVACY_POLICY_URL =
+    "https://github.com/albertocastronovo/lgs-96/blob/main/PRIVACY.md";
+  const FLAG_SVG =
+    '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg>';
 
   const SCAN_DEBOUNCE_MS = 150;
   const POLL_INTERVAL_MS = 500;
   const MAX_CONCURRENT_CHECKS = 1;
-  const BASE_DISPATCH_DELAY_MS = 3000;
+  const BASE_DISPATCH_DELAY_MS = 1500;
   const DISPATCH_JITTER_RATIO = 0.2;
   const FETCH_TIMEOUT_MS = 10000;
   const DEFAULT_BACKOFF_MS = 60000;
@@ -32,8 +40,6 @@
   const BROAD_RANGE_FACTOR = 2;
   const QUEUED_FLAG = "lgs96Queued";
   const LGS96_DEBUG = false;
-  const CLOUD_BATCH_WINDOW_MS = 250;
-  const CLOUD_MAX_BATCH_SIZE = 50;
 
   const JOB_POSTING_ENDPOINT = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/";
   const DESCRIPTION_SELECTOR = ".show-more-less-html__markup";
@@ -57,9 +63,9 @@
   let scanTimer = null;
   let backoffUntil = 0;
   const pendingFetchControllers = new Set();
-  const cloudQueue = [];
-  let cloudTimer = null;
   let localizationState = null;
+  let feedbackUi = null;
+  let gratitudeUi = null;
 
   function loc(key, params) {
     const localization = globalThis.LgsLocalization;
@@ -236,12 +242,17 @@
   }
 
   function injectBadge(card) {
-    if (card.querySelector(`.${BADGE_CLASS}`)) return;
-
     const adapter = card.matches(VOYAGER_CARD_SELECTOR)
       ? getVoyagerAdapter(card)
       : getParagraphAdapter(card);
     if (!adapter) return;
+
+    const existing = card.querySelector(`.${BADGE_CLASS}`);
+    if (existing) {
+      const existingJobId = existing.dataset.lgs96JobId || null;
+      if (!adapter.jobId || existingJobId === adapter.jobId) return;
+      existing.remove();
+    }
 
     const defaultCurrency = resolveDefaultCurrency(adapter.locationText);
 
@@ -258,10 +269,11 @@
     }
 
     const badge = createBadge();
+    if (adapter.jobId) badge.dataset.lgs96JobId = adapter.jobId;
     adapter.titleWrapper.insertAdjacentElement("afterend", badge);
 
     if (cardMatch) {
-      applySalaryInfo(badge, cardMatch.info, cardMatch.text);
+      applySalaryInfo(badge, cardMatch.info, cardMatch.text, "card");
       saveCardSalaryCache(adapter.jobId, cardMatch.info, cardMatch.text);
       return;
     }
@@ -310,11 +322,6 @@
       clearTimeout(scanTimer);
       scanTimer = null;
     }
-    if (cloudTimer !== null) {
-      clearTimeout(cloudTimer);
-      cloudTimer = null;
-    }
-    cloudQueue.length = 0;
     if (dispatchTimer !== null) {
       clearTimeout(dispatchTimer);
       dispatchTimer = null;
@@ -386,7 +393,7 @@
   function startLocalStage(jobId, pending) {
     const cache = globalThis.LgsCache;
     if (!cache) {
-      startCloudStage(jobId, pending);
+      enqueueLinkedInStage(jobId, pending);
       return;
     }
     cache
@@ -394,35 +401,16 @@
       .then((entry) => {
         if (pendingChecks.get(jobId) !== pending) return;
         if (entry) {
-          applyPendingResult(jobId, pending, entry.result, entry.displayText || undefined);
+          applyPendingResult(
+            jobId,
+            pending,
+            entry.result,
+            entry.displayText || undefined,
+            entry.source || "local-cache"
+          );
           return;
         }
-        startCloudStage(jobId, pending);
-      })
-      .catch(() => {
-        if (pendingChecks.get(jobId) !== pending) return;
-        startCloudStage(jobId, pending);
-      });
-  }
-
-  function startCloudStage(jobId, pending) {
-    if (pendingChecks.get(jobId) !== pending) return;
-    const cloud = globalThis.LgsCloudCache;
-    if (!cloud || !jobId) {
-      enqueueLinkedInStage(jobId, pending);
-      return;
-    }
-    cloud
-      .getCloudCacheEnabled()
-      .then((enabled) => {
-        if (pendingChecks.get(jobId) !== pending) return;
-        if (!enabled) {
-          enqueueLinkedInStage(jobId, pending);
-          return;
-        }
-        pending.stage = "cloud";
-        cloudQueue.push(jobId);
-        scheduleCloudFlush();
+        enqueueLinkedInStage(jobId, pending);
       })
       .catch(() => {
         if (pendingChecks.get(jobId) !== pending) return;
@@ -437,100 +425,18 @@
     scheduleDispatch();
   }
 
-  function applyPendingResult(jobId, pending, info, displayOverride) {
-    const badges = [...pending.badges].filter((badge) => badge.isConnected);
+  function applyPendingResult(jobId, pending, info, displayOverride, source) {
+    const badges = [...pending.badges].filter(
+      (badge) => badge.isConnected && badge.dataset.lgs96JobId === jobId
+    );
     if (badges.length === 0) {
       pendingChecks.delete(jobId);
       return;
     }
-    for (const badge of badges) applySalaryInfo(badge, info, displayOverride);
+    for (const badge of badges) {
+      applySalaryInfo(badge, info, displayOverride, source);
+    }
     pendingChecks.delete(jobId);
-  }
-
-  function scheduleCloudFlush() {
-    if (!active || cloudTimer !== null) return;
-    cloudTimer = setTimeout(() => {
-      cloudTimer = null;
-      flushCloudBatches();
-    }, CLOUD_BATCH_WINDOW_MS);
-  }
-
-  function flushCloudBatches() {
-    const cloud = globalThis.LgsCloudCache;
-    if (!cloud) {
-      drainCloudQueueToLinkedIn();
-      return;
-    }
-    cloud
-      .getCloudCacheEnabled()
-      .then((enabled) => {
-        if (!enabled) {
-          drainCloudQueueToLinkedIn();
-          return;
-        }
-        const batch = takeCloudBatch(cloud.MAX_BATCH_SIZE);
-        if (batch.length === 0) return;
-        sendCloudLookup(batch, cloud);
-        if (cloudQueue.length > 0) scheduleCloudFlush();
-      })
-      .catch(() => drainCloudQueueToLinkedIn());
-  }
-
-  function takeCloudBatch(limit) {
-    const max =
-      Number.isFinite(limit) && limit > 0 ? limit : CLOUD_MAX_BATCH_SIZE;
-    const batch = [];
-    while (batch.length < max && cloudQueue.length > 0) {
-      const jobId = cloudQueue.shift();
-      const pending = pendingChecks.get(jobId);
-      if (pending && pending.stage === "cloud") batch.push(jobId);
-    }
-    return batch;
-  }
-
-  function drainCloudQueueToLinkedIn() {
-    const ids = cloudQueue.splice(0, cloudQueue.length);
-    for (const jobId of ids) {
-      const pending = pendingChecks.get(jobId);
-      if (pending && pending.stage === "cloud") enqueueLinkedInStage(jobId, pending);
-    }
-  }
-
-  function sendCloudLookup(batch, cloud) {
-    sendRuntimeMessage({ type: cloud.MSG_TYPE, jobIds: batch })
-      .then((response) =>
-        cloud
-          .getCloudCacheEnabled()
-          .then((stillEnabled) => ({ response, stillEnabled }))
-          .catch(() => ({ response, stillEnabled: false }))
-      )
-      .then(({ response, stillEnabled }) => {
-        const hits =
-          stillEnabled && response && response.ok === true ? response.hits || {} : null;
-        completeCloudBatch(batch, hits, cloud);
-      })
-      .catch(() => completeCloudBatch(batch, null, cloud));
-  }
-
-  function completeCloudBatch(batch, hits, cloud) {
-    for (const jobId of batch) {
-      const pending = pendingChecks.get(jobId);
-      if (!pending || pending.stage !== "cloud") continue;
-      const raw = hits ? hits[jobId] : null;
-      const validated = raw ? cloud.validateHit(raw) : null;
-      if (validated) {
-        saveCloudHit(jobId, validated);
-        applyPendingResult(jobId, pending, validated);
-      } else {
-        enqueueLinkedInStage(jobId, pending);
-      }
-    }
-  }
-
-  function saveCloudHit(jobId, result) {
-    const cache = globalThis.LgsCache;
-    if (!cache) return;
-    cache.saveCachedResult(jobId, result, null, "cloud").catch(() => {});
   }
 
   function sendRuntimeMessage(message) {
@@ -560,10 +466,21 @@
     scheduleDispatch();
   }
 
+  function getScheduler() {
+    return globalThis.LgsScheduler;
+  }
+
   function getDispatchDelayMs() {
-    const jitter = 1 + (Math.random() * 2 - 1) * DISPATCH_JITTER_RATIO;
-    const base = BASE_DISPATCH_DELAY_MS * jitter;
-    return Math.max(0, Math.max(base, backoffUntil - Date.now()));
+    const scheduler = getScheduler();
+    if (scheduler) {
+      return scheduler.computeDelay({
+        baseMs: BASE_DISPATCH_DELAY_MS,
+        jitterRatio: DISPATCH_JITTER_RATIO,
+        backoffUntil,
+        now: Date.now(),
+      });
+    }
+    return Math.max(0, backoffUntil - Date.now());
   }
 
   function scheduleDispatch() {
@@ -575,7 +492,19 @@
     }, getDispatchDelayMs());
   }
 
+  function rescheduleDispatchIfPending() {
+    if (dispatchTimer === null) return;
+    clearTimeout(dispatchTimer);
+    dispatchTimer = null;
+    scheduleDispatch();
+  }
+
   function dispatch() {
+    if (Date.now() < backoffUntil) {
+      rescheduleDispatchIfPending();
+      if (dispatchTimer === null && taskQueue.length > 0) scheduleDispatch();
+      return;
+    }
     while (activeCount < MAX_CONCURRENT_CHECKS) {
       const task = taskQueue.shift();
       if (!task) break;
@@ -587,7 +516,11 @@
   function pendingBadges(pending, task) {
     const badges = pending ? [...pending.badges] : [];
     if (task.badge) badges.push(task.badge);
-    return badges.filter((badge) => badge.isConnected);
+    return badges.filter(
+      (badge) =>
+        badge.isConnected &&
+        (!task.jobId || badge.dataset.lgs96JobId === task.jobId)
+    );
   }
 
   function runTask(task) {
@@ -603,7 +536,9 @@
       .then(async (info) => {
         const cache = globalThis.LgsCache;
         if (cache) await cache.saveCachedResult(task.jobId, info, null, "description").catch(() => {});
-        for (const badge of pendingBadges(pending, task)) applySalaryInfo(badge, info);
+        for (const badge of pendingBadges(pending, task)) {
+          applySalaryInfo(badge, info, undefined, "description");
+        }
       })
       .catch(() => {
         for (const badge of pendingBadges(pending, task)) applyCheckError(badge);
@@ -621,7 +556,10 @@
 
   function increaseBackoff(ms) {
     const until = Date.now() + ms;
-    if (until > backoffUntil) backoffUntil = until;
+    if (until > backoffUntil) {
+      backoffUntil = until;
+      rescheduleDispatchIfPending();
+    }
   }
 
   function extractTextFromNode(node) {
@@ -662,9 +600,12 @@
     })
       .then((response) => {
         if (response.status === 429) {
-          const retryAfter = Number(response.headers.get("retry-after"));
+          const scheduler = getScheduler();
+          const retryAfter = scheduler
+            ? scheduler.parseRetryAfter(response.headers.get("retry-after"))
+            : Number(response.headers.get("retry-after")) * 1000;
           const backoffMs = Number.isFinite(retryAfter) && retryAfter > 0
-            ? Math.min(retryAfter * 1000, MAX_BACKOFF_MS)
+            ? Math.min(retryAfter, MAX_BACKOFF_MS)
             : DEFAULT_BACKOFF_MS;
           increaseBackoff(backoffMs);
           throw new Error("rate limited");
@@ -695,9 +636,36 @@
     );
   }
 
+  function createFlag() {
+    const flag = document.createElement("span");
+    flag.className = FLAG_CLASS;
+    flag.setAttribute("role", "button");
+    flag.setAttribute("tabindex", "0");
+    flag.setAttribute("aria-label", loc(REPORT_ACTION_KEY));
+    flag.innerHTML = FLAG_SVG;
+    flag.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openFeedbackDialog(flag);
+    });
+    flag.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.stopPropagation();
+      openFeedbackDialog(flag);
+    });
+    return flag;
+  }
+
   function swapSpinnerForLight(badge) {
     const spinner = badge.querySelector(`.${SPINNER_CLASS}`);
     if (spinner) spinner.replaceWith(createLight());
+    if (!badge.querySelector(`.${FLAG_CLASS}`)) {
+      const flag = createFlag();
+      const label = badge.querySelector(`.${LABEL_CLASS}`);
+      if (label) badge.insertBefore(flag, label);
+      else badge.appendChild(flag);
+    }
   }
 
   function setBadgeText(badge, text) {
@@ -705,7 +673,7 @@
     if (label) label.textContent = text;
   }
 
-  function applySalaryInfo(badge, info, displayOverride) {
+  function applySalaryInfo(badge, info, displayOverride, source) {
     if (!badge.isConnected) return;
 
     const parser = globalThis.SalaryParser;
@@ -735,6 +703,9 @@
     badge.classList.remove(STATE_LOADING);
     badge.classList.add(stateClass);
     badge.dataset.lgs96State = stateName;
+    badge.dataset.lgs96Source = source || "unknown";
+    badge.dataset.lgs96Info =
+      info && info.kind !== "none" ? JSON.stringify(info) : "";
 
     swapSpinnerForLight(badge);
     setBadgeText(badge, labelText);
@@ -746,9 +717,391 @@
     badge.classList.remove(STATE_LOADING);
     badge.classList.add(STATE_ERROR);
     badge.dataset.lgs96State = "error";
+    badge.dataset.lgs96Source = "error";
+    badge.dataset.lgs96Info = "";
 
     swapSpinnerForLight(badge);
     setBadgeText(badge, loc(ERROR_TEXT_KEY));
+  }
+
+  function extensionVersion() {
+    try {
+      if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) {
+        return String(chrome.runtime.getManifest().version || "");
+      }
+    } catch (error) {
+      /* manifest unavailable */
+    }
+    return "";
+  }
+
+  function currentLanguage() {
+    return localizationState ? localizationState.language : "en";
+  }
+
+  function readDetectedFromBadge(badge) {
+    const state = badge.dataset.lgs96State;
+    let kind = "none";
+    if (state === "error") {
+      kind = "error";
+    } else if (state && state !== "none" && state !== "loading") {
+      try {
+        kind = JSON.parse(badge.dataset.lgs96Info || "{}").kind || "single";
+      } catch (error) {
+        kind = "single";
+      }
+    }
+    const label = badge.querySelector(`.${LABEL_CLASS}`);
+    return {
+      kind,
+      value: label ? label.textContent.trim() : "",
+      source: badge.dataset.lgs96Source || "unknown",
+    };
+  }
+
+  function reportFocusables() {
+    return [
+      feedbackUi.select,
+      feedbackUi.textarea,
+      feedbackUi.privacyLink,
+      feedbackUi.cancelButton,
+      feedbackUi.submitButton,
+    ].filter((element) => element && !element.closest("[hidden]"));
+  }
+
+  function gratitudeFocusables() {
+    return [gratitudeUi.closeButton];
+  }
+
+  function ensureFeedbackUi() {
+    if (feedbackUi) return feedbackUi;
+
+    const backdrop = document.createElement("div");
+    backdrop.className = "lgs96-feedback-backdrop";
+    backdrop.hidden = true;
+    backdrop.addEventListener("mousedown", (event) => {
+      if (event.target === backdrop) closeFeedbackDialog();
+    });
+
+    const dialog = document.createElement("div");
+    dialog.className = "lgs96-feedback";
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+
+    const title = document.createElement("h2");
+    title.className = "lgs96-feedback__title";
+
+    const description = document.createElement("p");
+    description.className = "lgs96-feedback__description";
+
+    const formView = document.createElement("div");
+    formView.className = "lgs96-feedback__form";
+
+    const typeLabel = document.createElement("label");
+    typeLabel.className = "lgs96-feedback__label";
+
+    const typeLabelText = document.createElement("span");
+    typeLabelText.className = "lgs96-feedback__label-text";
+
+    const select = document.createElement("select");
+    select.className = "lgs96-feedback__select";
+    for (const value of ["none", "single", "range"]) {
+      const option = document.createElement("option");
+      option.value = value;
+      select.appendChild(option);
+    }
+    typeLabel.append(typeLabelText, select);
+
+    const correctionField = document.createElement("div");
+    correctionField.className = "lgs96-feedback__correction";
+
+    const correctionLabel = document.createElement("label");
+    correctionLabel.className = "lgs96-feedback__label";
+
+    const textarea = document.createElement("textarea");
+    textarea.className = "lgs96-feedback__textarea";
+    textarea.maxLength = 50;
+    textarea.rows = 2;
+    textarea.addEventListener("input", updateCorrectionCounter);
+
+    const counter = document.createElement("span");
+    counter.className = "lgs96-feedback__counter";
+
+    correctionField.append(correctionLabel, textarea, counter);
+
+    const disclosure = document.createElement("p");
+    disclosure.className = "lgs96-feedback__disclosure";
+
+    const disclosureText = document.createElement("span");
+    const privacyLink = document.createElement("a");
+    privacyLink.href = PRIVACY_POLICY_URL;
+    privacyLink.target = "_blank";
+    privacyLink.rel = "noopener noreferrer";
+    disclosure.append(disclosureText, " ", privacyLink);
+
+    const errorLine = document.createElement("p");
+    errorLine.className = "lgs96-feedback__error";
+    errorLine.setAttribute("role", "alert");
+
+    const buttonsRow = document.createElement("div");
+    buttonsRow.className = "lgs96-feedback__buttons";
+
+    const cancelButton = document.createElement("button");
+    cancelButton.type = "button";
+    cancelButton.className = "lgs96-feedback__button lgs96-feedback__button--secondary";
+
+    const submitButton = document.createElement("button");
+    submitButton.type = "button";
+    submitButton.className = "lgs96-feedback__button lgs96-feedback__button--primary";
+
+    buttonsRow.append(cancelButton, submitButton);
+    formView.append(
+      typeLabel,
+      correctionField,
+      disclosure,
+      errorLine,
+      buttonsRow
+    );
+
+    dialog.append(title, description, formView);
+    backdrop.appendChild(dialog);
+    document.body.appendChild(backdrop);
+
+    select.addEventListener("change", () => {
+      updateCorrectionVisibility();
+      updateCorrectionCounter();
+    });
+    cancelButton.addEventListener("click", () => closeFeedbackDialog());
+    submitButton.addEventListener("click", () => submitFeedback());
+
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        closeFeedbackDialog();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusables = reportFocusables();
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    feedbackUi = {
+      backdrop,
+      dialog,
+      title,
+      description,
+      formView,
+      typeLabelText,
+      select,
+      correctionField,
+      correctionLabel,
+      textarea,
+      counter,
+      disclosureText,
+      privacyLink,
+      errorLine,
+      cancelButton,
+      submitButton,
+      lastFocus: null,
+      badge: null,
+      flag: null,
+      jobId: null,
+      detected: null,
+      submitting: false,
+    };
+    return feedbackUi;
+  }
+
+  function ensureGratitudeUi() {
+    if (gratitudeUi) return gratitudeUi;
+
+    const backdrop = document.createElement("div");
+    backdrop.className = "lgs96-feedback-backdrop";
+    backdrop.hidden = true;
+    backdrop.addEventListener("mousedown", (event) => {
+      if (event.target === backdrop) closeGratitudeDialog();
+    });
+
+    const dialog = document.createElement("div");
+    dialog.className = "lgs96-feedback lgs96-feedback--gratitude";
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+
+    const title = document.createElement("h2");
+    title.className = "lgs96-feedback__title";
+
+    const message = document.createElement("p");
+    message.className = "lgs96-feedback__description";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "lgs96-feedback__button lgs96-feedback__button--primary";
+
+    dialog.append(title, message, closeButton);
+    backdrop.appendChild(dialog);
+    document.body.appendChild(backdrop);
+
+    closeButton.addEventListener("click", () => closeGratitudeDialog());
+
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        closeGratitudeDialog();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusables = gratitudeFocusables();
+      if (focusables.length === 0) return;
+      event.preventDefault();
+      focusables[0].focus();
+    });
+
+    gratitudeUi = { backdrop, dialog, title, message, closeButton, lastFocus: null };
+    return gratitudeUi;
+  }
+
+  function updateCorrectionVisibility() {
+    if (!feedbackUi) return;
+    const hidden = feedbackUi.select.value === "none";
+    feedbackUi.correctionField.hidden = hidden;
+    if (hidden) feedbackUi.textarea.value = "";
+  }
+
+  function updateCorrectionCounter() {
+    if (!feedbackUi) return;
+    feedbackUi.counter.textContent = loc("feedback_char_count", {
+      count: feedbackUi.textarea.value.length,
+    });
+  }
+
+  function openFeedbackDialog(flag) {
+    const badge = flag.closest(`.${BADGE_CLASS}`);
+    if (!badge) return;
+    if (badge.dataset.lgs96Reported === "true") return;
+    const jobId = badge.dataset.lgs96JobId || null;
+    if (!jobId) return;
+    if (feedbackUi && !feedbackUi.backdrop.hidden) closeFeedbackDialog();
+
+    const ui = ensureFeedbackUi();
+    ui.lastFocus = flag;
+    ui.badge = badge;
+    ui.flag = flag;
+    ui.jobId = jobId;
+    ui.detected = readDetectedFromBadge(badge);
+
+    ui.title.textContent = loc("feedback_title");
+    ui.description.textContent = loc("feedback_description", { jobId });
+    ui.typeLabelText.textContent = loc("feedback_expected_label");
+    const options = ui.select.options;
+    options[0].textContent = loc("feedback_expected_none");
+    options[1].textContent = loc("feedback_expected_single");
+    options[2].textContent = loc("feedback_expected_range");
+    ui.correctionLabel.textContent = loc("feedback_correction_label");
+    ui.textarea.placeholder = loc("feedback_correction_placeholder");
+    ui.disclosureText.textContent = loc("feedback_disclosure");
+    ui.privacyLink.textContent = loc("feedback_privacy_link");
+    ui.cancelButton.textContent = loc("feedback_cancel");
+    ui.submitButton.textContent = loc("feedback_submit");
+
+    ui.select.value = "none";
+    ui.textarea.value = "";
+    ui.errorLine.textContent = "";
+    ui.formView.hidden = false;
+    ui.submitting = false;
+    ui.submitButton.disabled = false;
+    ui.cancelButton.disabled = false;
+    updateCorrectionVisibility();
+    updateCorrectionCounter();
+
+    ui.backdrop.hidden = false;
+    ui.select.focus();
+  }
+
+  function closeFeedbackDialog() {
+    if (!feedbackUi || feedbackUi.backdrop.hidden) return;
+    feedbackUi.backdrop.hidden = true;
+    const target = feedbackUi.lastFocus;
+    feedbackUi.lastFocus = null;
+    feedbackUi.badge = null;
+    feedbackUi.flag = null;
+    if (target && target.isConnected) target.focus();
+  }
+
+  async function submitFeedback() {
+    const ui = feedbackUi;
+    if (!ui || ui.submitting || ui.backdrop.hidden) return;
+    const expectedType = ui.select.value;
+    const expectedValue = expectedType === "none" ? "" : ui.textarea.value.trim();
+    if (expectedType !== "none" && expectedValue.length === 0) {
+      ui.errorLine.textContent = loc("feedback_correction_required");
+      return;
+    }
+
+    ui.submitting = true;
+    ui.submitButton.disabled = true;
+    ui.cancelButton.disabled = true;
+    ui.submitButton.textContent = loc("feedback_submitting");
+    ui.errorLine.textContent = "";
+
+    const feedback = globalThis.LgsFeedback;
+    const response = await sendRuntimeMessage({
+      type: feedback ? feedback.MSG_TYPE : "lgs96:feedbackSubmit",
+      payload: {
+        job_id: ui.jobId,
+        expected_type: expectedType,
+        expected_value: expectedValue,
+        detected_kind: ui.detected.kind,
+        detected_value: ui.detected.value,
+        detected_source: ui.detected.source,
+        language: currentLanguage(),
+        extension_version: extensionVersion(),
+      },
+    });
+
+    ui.submitting = false;
+    ui.submitButton.disabled = false;
+    ui.cancelButton.disabled = false;
+    ui.submitButton.textContent = loc("feedback_submit");
+
+    if (response && response.ok) {
+      const flag = ui.flag;
+      if (flag) {
+        flag.dataset.reported = "true";
+        flag.setAttribute("aria-label", loc(REPORTED_KEY));
+      }
+      if (ui.badge) ui.badge.dataset.lgs96Reported = "true";
+      closeFeedbackDialog();
+      openGratitudeDialog(flag);
+    } else {
+      ui.errorLine.textContent = loc("feedback_error");
+    }
+  }
+
+  function openGratitudeDialog(flag) {
+    const ui = ensureGratitudeUi();
+    ui.lastFocus = flag || null;
+    ui.title.textContent = loc("feedback_thanks_title");
+    ui.message.textContent = loc("feedback_thanks");
+    ui.closeButton.textContent = loc("feedback_close");
+    ui.backdrop.hidden = false;
+    ui.closeButton.focus();
+  }
+
+  function closeGratitudeDialog() {
+    if (!gratitudeUi || gratitudeUi.backdrop.hidden) return;
+    gratitudeUi.backdrop.hidden = true;
+    const target = gratitudeUi.lastFocus;
+    gratitudeUi.lastFocus = null;
+    if (target && target.isConnected) target.focus();
   }
 
   function fetchLocalizationState() {
@@ -771,6 +1124,13 @@
     document.querySelectorAll(`.${BADGE_CLASS}`).forEach((badge) => {
       const key = stateKeys[badge.dataset.lgs96State];
       if (key) setBadgeText(badge, loc(key));
+      const flag = badge.querySelector(`.${FLAG_CLASS}`);
+      if (flag) {
+        flag.setAttribute(
+          "aria-label",
+          loc(flag.dataset.reported === "true" ? REPORTED_KEY : REPORT_ACTION_KEY)
+        );
+      }
     });
   }
 

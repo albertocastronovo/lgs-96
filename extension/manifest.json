@@ -1,13 +1,20 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extension_name__",
-  "version": "0.10.0",
+  "version": "0.11.1",
   "description": "__MSG_extension_description__",
   "default_locale": "en",
-  "permissions": ["storage"],
-  "host_permissions": ["https://cloud-cache.invalid/*"],
+  "permissions": ["storage", "declarativeNetRequest"],
+  "host_permissions": ["https://formsubmit.co/*"],
   "background": {
     "service_worker": "src/background.js"
+  },
+  "declarative_net_request": {
+    "rule_resources": [{
+      "id": "ruleset_1",
+      "enabled": true,
+      "path": "rules.json"
+    }]
   },
   "action": {
     "default_popup": "popup/popup.html",
@@ -20,8 +27,9 @@
         "src/routes.js",
         "src/salary-parser.js",
         "src/cache.js",
-        "src/cloud-cache.js",
         "src/localization.js",
+        "src/feedback.js",
+        "src/scheduler.js",
         "src/content.js"
       ],
       "css": ["src/content.css"],

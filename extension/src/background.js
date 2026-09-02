@@ -1,23 +1,23 @@
 "use strict";
 
-importScripts("localization.js", "cloud-cache.js");
+importScripts("localization.js", "feedback.js");
 
-const cloudModule = globalThis.LgsCloudCache;
 const localizationModule = globalThis.LgsLocalization;
-const CLOUD_LOOKUP_MSG = cloudModule ? cloudModule.MSG_TYPE : "lgs96:cloudLookup";
+const feedbackModule = globalThis.LgsFeedback;
 const LOCALIZATION_MSG = localizationModule
   ? localizationModule.MSG_TYPE
   : "lgs96:localizationGet";
+const FEEDBACK_MSG = feedbackModule ? feedbackModule.MSG_TYPE : "lgs96:feedbackSubmit";
+
+try {
+  if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.remove("lgs96:cloudCacheEnabled");
+  }
+} catch (error) {
+  /* storage unavailable */
+}
 
 if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (!message || message.type !== CLOUD_LOOKUP_MSG) return;
-    handleCloudLookup(message)
-      .then(sendResponse)
-      .catch(() => sendResponse({ ok: false, error: "cloud_lookup_failed" }));
-    return true;
-  });
-
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message || message.type !== LOCALIZATION_MSG) return;
     handleLocalizationGet()
@@ -25,15 +25,22 @@ if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage)
       .catch(() => sendResponse({ ok: false, error: "localization_unavailable" }));
     return true;
   });
+
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (!message || message.type !== FEEDBACK_MSG) return;
+    handleFeedbackSubmit(message)
+      .then(sendResponse)
+      .catch(() => sendResponse({ ok: false, error: "feedback_send_failed" }));
+    return true;
+  });
 }
 
-async function handleCloudLookup(message) {
-  if (!cloudModule) return { ok: false, error: "cloud_unavailable" };
-  const enabled = await cloudModule.getCloudCacheEnabled();
-  if (!enabled) return { ok: false, error: "cloud_disabled" };
-  const jobIds = cloudModule.normalizeJobIds(message && message.jobIds);
-  if (jobIds.length === 0) return { ok: true, hits: {} };
-  return cloudModule.lookupSalaries(jobIds, (url, init) => fetch(url, init));
+async function handleFeedbackSubmit(message) {
+  if (!feedbackModule) return { ok: false, error: "feedback_unavailable" };
+  return feedbackModule.submitReport(
+    message && message.payload,
+    (url, init) => fetch(url, init)
+  );
 }
 
 async function loadCatalog(locale) {

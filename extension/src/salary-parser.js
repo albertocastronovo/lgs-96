@@ -188,6 +188,27 @@
     return "approx";
   }
 
+  const SUPPLEMENTAL_LABEL_SRC =
+    "(?:signing|performance|productivity|referral|annual|annuale|annuo|trimestrale|one[- ]time|target|discretionary|firma)?\\s*(?:bonus|incentiv\\w*|premi\\w*|gratific\\w*|buoni?)";
+
+  const SUPPLEMENTAL_BEFORE_RE = new RegExp(
+    `${SUPPLEMENTAL_LABEL_SRC}(?:\\s*(?:di|of|del|della|:))?\\s*$`,
+    "i"
+  );
+
+  const SUPPLEMENTAL_AFTER_RE = new RegExp(
+    "^\\s*(?:di|of|del|della|:)?\\s*" + SUPPLEMENTAL_LABEL_SRC,
+    "i"
+  );
+
+  function isSupplementalAmount(line, start, end) {
+    const before = line.slice(Math.max(0, start - 48), start);
+    const after = line.slice(end, end + 48);
+    return (
+      SUPPLEMENTAL_BEFORE_RE.test(before) || SUPPLEMENTAL_AFTER_RE.test(after)
+    );
+  }
+
   function collectLineFacts(line, facts, options = {}) {
     if (PERIOD_EXCLUDE_RE.test(line)) return;
 
@@ -238,6 +259,7 @@
       if (spans.some(([s, e]) => start < e && end > s)) continue;
       const value = parseNum(m[2]);
       if (value === null) continue;
+      if (isSupplementalAmount(line, start, end)) continue;
       facts.push({
         kind: "single",
         value,

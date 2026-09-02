@@ -26,8 +26,11 @@
   "popup_cloud_cache": {
     "message": "Cloud cache"
   },
-  "popup_preview": {
-    "message": "preview"
+  "popup_cloud_coming_soon": {
+    "message": "Coming soon"
+  },
+  "popup_disclaimer": {
+    "message": "Results are extracted automatically and may be incomplete or wrong."
   },
   "popup_cached_jobs": {
     "message": "Cached jobs: {count}"
@@ -42,9 +45,72 @@
     "message": "Fetching salary info..."
   },
   "badge_none": {
-    "message": "No salary info"
+    "message": "Salary not detected"
   },
   "badge_error": {
     "message": "Salary check failed"
+  },
+  "badge_report_action": {
+    "message": "Report an incorrect result"
+  },
+  "feedback_reported": {
+    "message": "Result reported"
+  },
+  "feedback_title": {
+    "message": "Report an incorrect result"
+  },
+  "feedback_description": {
+    "message": "Report for job {jobId}. Tell us what the posting actually contains."
+  },
+  "feedback_expected_label": {
+    "message": "This posting contains"
+  },
+  "feedback_expected_none": {
+    "message": "No salary information"
+  },
+  "feedback_expected_single": {
+    "message": "A single salary value"
+  },
+  "feedback_expected_range": {
+    "message": "A salary range"
+  },
+  "feedback_correction_label": {
+    "message": "What should it show? (max 50 characters)"
+  },
+  "feedback_correction_placeholder": {
+    "message": "e.g. 35k - 45k EUR"
+  },
+  "feedback_correction_required": {
+    "message": "Please describe what the posting should show."
+  },
+  "feedback_char_count": {
+    "message": "{count}/50"
+  },
+  "feedback_disclosure": {
+    "message": "Submitting sends the job ID and your feedback via FormSubmit to the extension author. See the Privacy Policy."
+  },
+  "feedback_privacy_link": {
+    "message": "Privacy Policy"
+  },
+  "feedback_cancel": {
+    "message": "Cancel"
+  },
+  "feedback_submit": {
+    "message": "Submit"
+  },
+  "feedback_submitting": {
+    "message": "Sending..."
+  },
+  "feedback_close": {
+    "message": "Close"
+  },
+  "feedback_thanks_title": {
+    "message": "Thank you!"
+  },
+  "feedback_thanks": {
+    "message": "Your report helps make LGS-96 more accurate."
+  },
+  "feedback_error": {
+    "message": "Something went wrong while sending your report. Please try again."
   }
 }
