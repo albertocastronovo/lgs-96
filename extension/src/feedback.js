@@ -145,13 +145,6 @@
         ? response.headers.get("content-type") || ""
         : "";
 
-    if (!contentType.includes("json")) {
-      console.warn("[LGS Feedback] Bad content-type received:", contentType);
-      const rawText = await response.text();
-      console.warn("[LGS Feedback] Raw response body was:", rawText.slice(0, 200));
-      return { ok: false, error: "feedback_bad_content_type" };
-    }
-
     const text = await response.text();
     if (typeof text !== "string" || text.length > MAX_RESPONSE_CHARS) {
       console.warn("[LGS Feedback] Response body too long or non-string");
