@@ -82,6 +82,35 @@ test("signing bonus before the salary does not pollute the range", () => {
   assert.deepEqual(toComparable(info), [150000, 250000]);
 });
 
+test("stacked modifiers before the label are excluded", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Compensation Salary: $150,000–$250,000 USD $20,000 one-time signing bonus 4 weeks vacation + country-specific holidayFully remote"
+  );
+  assert.equal(info.currency, "USD");
+  assert.deepEqual(toComparable(info), [150000, 250000]);
+});
+
+test("sign-on bonus is excluded from salary aggregation", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Compensation Salary: $150,000-$250,000 USD $20,000 sign-on bonus 4 weeks vacation Fully remote"
+  );
+  assert.deepEqual(toComparable(info), [150000, 250000]);
+});
+
+test("annual performance bonus is excluded from salary aggregation", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Compensation Salary: $150,000-$250,000 USD $20,000 annual performance bonus Fully remote"
+  );
+  assert.deepEqual(toComparable(info), [150000, 250000]);
+});
+
+test("supplemental range is excluded but the salary range survives", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Signing bonus: $10,000 - $15,000. Salary: $150,000-$250,000."
+  );
+  assert.deepEqual(toComparable(info), [150000, 250000]);
+});
+
 test("salary plus bonus clause keeps the salary value", () => {
   const info = SalaryParser.findSalaryInfo("Salary: $100,000 plus a performance bonus.");
   assert.deepEqual(toComparable(info), [100000]);

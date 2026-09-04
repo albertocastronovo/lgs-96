@@ -47,7 +47,7 @@ test("cache is enabled by default; range results round-trip", async () => {
 
   await cache.saveCachedResult("123", RANGE, null, "description");
   const entry = await cache.getCachedResult("123");
-  assert.equal(entry.v, 1);
+  assert.equal(entry.v, cache.SCHEMA_VERSION);
   assert.equal(entry.source, "description");
   assert.equal(entry.displayText, null);
   assert.deepEqual(entry.result, RANGE);
@@ -92,6 +92,19 @@ test("corrupt entries are rejected and removed", async () => {
   assert.equal(fake.data.has("lgs96:job:2"), false);
   assert.equal(await cache.getCachedResult("22"), null);
   assert.equal(fake.data.has("lgs96:job:22"), false);
+});
+
+test("entries from older schema versions are purged on read", async () => {
+  const fake = install(createFakeChrome());
+  fake.data.set("lgs96:job:7", {
+    v: cache.SCHEMA_VERSION - 1,
+    savedAt: Date.now(),
+    result: RANGE,
+    displayText: null,
+    source: "description",
+  });
+  assert.equal(await cache.getCachedResult("7"), null);
+  assert.equal(fake.data.has("lgs96:job:7"), false);
 });
 
 test("invalid results and non-numeric ids are never stored", async () => {

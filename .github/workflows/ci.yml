@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Regenerate chrome locales
+        run: node scripts/generate-locales.js
+      - name: Run test suite
+        run: >
+          node --test tests/salary-parser.test.js tests/cache.test.js
+          tests/scheduler.test.js tests/feedback.test.js
+          tests/localization.test.js tests/routes.test.js
+          tests/fixture-cards.test.js tests/cloud-cache.test.js
+      - name: Build release package
+        run: node scripts/package.js
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lgs-96-zip
+          path: dist/*.zip
+          if-no-files-found: error

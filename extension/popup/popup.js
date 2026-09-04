@@ -3,12 +3,16 @@
 
   const cache = globalThis.LgsCache;
   const localization = globalThis.LgsLocalization;
+  const scheduler = globalThis.LgsScheduler;
 
   const brand = document.getElementById("popup-brand");
   const subtitle = document.getElementById("popup-subtitle");
   const disclaimer = document.getElementById("popup-disclaimer");
   const languageLabel = document.getElementById("language-label");
   const languageSelect = document.getElementById("language-select");
+  const frequencyLabel = document.getElementById("request-frequency-label");
+  const frequencySelect = document.getElementById("request-frequency-select");
+  const frequencyHint = document.getElementById("request-frequency-hint");
   const localCacheLabel = document.getElementById("local-cache-label");
   const cloudCacheText = document.getElementById("cloud-cache-text");
   const cloudPreview = document.getElementById("cloud-preview");
@@ -65,6 +69,29 @@
     languageSelect.disabled = available.length === 0;
   }
 
+  async function renderFrequencyOptions() {
+    frequencyLabel.textContent = t("popup_request_frequency_label");
+    frequencyHint.textContent = t("popup_request_frequency_hint");
+    frequencySelect.textContent = "";
+    if (!scheduler) {
+      frequencySelect.disabled = true;
+      return;
+    }
+    const labels = {
+      slow: "popup_request_frequency_slow",
+      average: "popup_request_frequency_average",
+      fast: "popup_request_frequency_fast",
+    };
+    for (const preset of ["slow", "average", "fast"]) {
+      const option = document.createElement("option");
+      option.value = preset;
+      option.textContent = t(labels[preset]);
+      frequencySelect.appendChild(option);
+    }
+    frequencySelect.value = await scheduler.getRequestFrequency();
+    frequencySelect.disabled = false;
+  }
+
   async function refreshCount() {
     if (!cache) {
       countLabel.textContent = t("popup_cache_unavailable");
@@ -84,6 +111,7 @@
     disclaimer.textContent = t("popup_disclaimer");
     languageLabel.textContent = t("popup_language_label");
     renderLanguageOptions();
+    await renderFrequencyOptions();
     localCacheLabel.textContent = t("popup_local_cache");
     cloudCacheText.textContent = t("popup_cloud_cache");
     cloudPreview.textContent = t("popup_cloud_coming_soon");
@@ -122,6 +150,11 @@
       await localization.setLanguage(languageSelect.value);
       await loadState();
       await render();
+    });
+
+    frequencySelect.addEventListener("change", async () => {
+      if (!scheduler) return;
+      await scheduler.setRequestFrequency(frequencySelect.value);
     });
   }
 

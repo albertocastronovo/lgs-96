@@ -20,6 +20,15 @@
     </section>
 
     <section class="popup__row">
+      <label class="popup__row-label" for="request-frequency-select" id="request-frequency-label"></label>
+      <select id="request-frequency-select" class="popup__select"></select>
+    </section>
+
+    <section class="popup__row popup__row--muted">
+      <span id="request-frequency-hint"></span>
+    </section>
+
+    <section class="popup__row">
       <label class="popup__row-label" for="cache-toggle" id="local-cache-label"></label>
       <label class="switch">
         <input type="checkbox" id="cache-toggle" role="switch" />
@@ -45,6 +54,7 @@
 
   <script src="../src/cache.js"></script>
   <script src="../src/localization.js"></script>
+  <script src="../src/scheduler.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

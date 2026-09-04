@@ -79,3 +79,50 @@ test("parseRetryAfter rejects garbage and empty values", () => {
   assert.equal(scheduler.parseRetryAfter(""), null);
   assert.equal(scheduler.parseRetryAfter("soon"), null);
 });
+
+test("frequency presets map to the agreed intervals", () => {
+  assert.deepEqual(scheduler.FREQUENCY_PRESETS, { slow: 2500, average: 1600, fast: 1000 });
+  assert.equal(scheduler.DEFAULT_FREQUENCY, "average");
+  assert.equal(scheduler.DEFAULT_INTERVAL_MS, 1600);
+});
+
+test("request frequency defaults to average without storage", async () => {
+  delete globalThis.chrome;
+  assert.equal(await scheduler.getRequestFrequency(), "average");
+  assert.equal(await scheduler.getRequestIntervalMs(), 1600);
+  assert.equal(await scheduler.setRequestFrequency("fast"), false);
+  delete globalThis.chrome;
+});
+
+test("request frequency persists and falls back on invalid values", async () => {
+  const data = new Map();
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get(keys) {
+          const out = {};
+          for (const key of [].concat(keys)) if (data.has(key)) out[key] = data.get(key);
+          return out;
+        },
+        async set(operations) {
+          for (const [key, value] of Object.entries(operations)) data.set(key, value);
+        },
+        async remove(keys) {
+          for (const key of [].concat(keys)) data.delete(key);
+        },
+      },
+    },
+  };
+  assert.equal(await scheduler.getRequestFrequency(), "average");
+  assert.equal(await scheduler.setRequestFrequency("slow"), true);
+  assert.equal(data.get("lgs96:requestFrequency"), "slow");
+  assert.equal(await scheduler.getRequestFrequency(), "slow");
+  assert.equal(await scheduler.getRequestIntervalMs(), 2500);
+  await scheduler.setRequestFrequency("fast");
+  assert.equal(await scheduler.getRequestIntervalMs(), 1000);
+  data.set("lgs96:requestFrequency", "turbo");
+  assert.equal(await scheduler.getRequestFrequency(), "average");
+  data.set("lgs96:requestFrequency", 1);
+  assert.equal(await scheduler.getRequestFrequency(), "average");
+  delete globalThis.chrome;
+});

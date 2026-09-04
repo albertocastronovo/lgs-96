@@ -32,7 +32,6 @@
   const SCAN_DEBOUNCE_MS = 150;
   const POLL_INTERVAL_MS = 500;
   const MAX_CONCURRENT_CHECKS = 1;
-  const BASE_DISPATCH_DELAY_MS = 1500;
   const DISPATCH_JITTER_RATIO = 0.2;
   const FETCH_TIMEOUT_MS = 10000;
   const DEFAULT_BACKOFF_MS = 60000;
@@ -43,6 +42,9 @@
 
   const JOB_POSTING_ENDPOINT = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/";
   const DESCRIPTION_SELECTOR = ".show-more-less-html__markup";
+  const SESSION_FETCH_BUDGET = 80;
+  const MAX_CONSECUTIVE_RATE_LIMITS = 3;
+  const MAX_DESCRIPTION_BYTES = 1000000;
 
   const BLOCK_TAGS = new Set([
     "P", "DIV", "LI", "UL", "OL", "H1", "H2", "H3", "H4", "H5", "H6",
@@ -62,6 +64,12 @@
   let dispatchTimer = null;
   let scanTimer = null;
   let backoffUntil = 0;
+  let dispatchBaseMs = 1600;
+  let sessionFetchesUsed = 0;
+  let consecutiveRateLimits = 0;
+  let sessionHalted = false;
+  let visibilityObserver = null;
+  const visibleJobIds = new Set();
   const pendingFetchControllers = new Set();
   let localizationState = null;
   let feedbackUi = null;
@@ -271,6 +279,7 @@
     const badge = createBadge();
     if (adapter.jobId) badge.dataset.lgs96JobId = adapter.jobId;
     adapter.titleWrapper.insertAdjacentElement("afterend", badge);
+    observeBadgeVisibility(badge);
 
     if (cardMatch) {
       applySalaryInfo(badge, cardMatch.info, cardMatch.text, "card");
@@ -474,13 +483,43 @@
     const scheduler = getScheduler();
     if (scheduler) {
       return scheduler.computeDelay({
-        baseMs: BASE_DISPATCH_DELAY_MS,
+        baseMs: dispatchBaseMs,
         jitterRatio: DISPATCH_JITTER_RATIO,
         backoffUntil,
         now: Date.now(),
       });
     }
     return Math.max(0, backoffUntil - Date.now());
+  }
+
+  function observeBadgeVisibility(badge) {
+    if (typeof IntersectionObserver === "undefined") return;
+    if (!visibilityObserver) {
+      visibilityObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const jobId = entry.target.dataset.lgs96JobId;
+            if (!jobId) continue;
+            if (entry.isIntersecting) visibleJobIds.add(jobId);
+            else visibleJobIds.delete(jobId);
+            if (!entry.target.isConnected) visibilityObserver.unobserve(entry.target);
+          }
+        },
+        { rootMargin: "200px 0px" }
+      );
+    }
+    visibilityObserver.observe(badge);
+  }
+
+  function takeNextTask() {
+    if (taskQueue.length === 0) return null;
+    for (let i = 0; i < taskQueue.length; i++) {
+      const task = taskQueue[i];
+      if (task.jobId && visibleJobIds.has(task.jobId)) {
+        return taskQueue.splice(i, 1)[0];
+      }
+    }
+    return taskQueue.shift();
   }
 
   function scheduleDispatch() {
@@ -506,7 +545,7 @@
       return;
     }
     while (activeCount < MAX_CONCURRENT_CHECKS) {
-      const task = taskQueue.shift();
+      const task = takeNextTask();
       if (!task) break;
       runTask(task);
       break;
@@ -525,13 +564,23 @@
 
   function runTask(task) {
     const pending = task.jobId ? pendingChecks.get(task.jobId) : null;
-    if (pendingBadges(pending, task).length === 0) {
+    const badges = pendingBadges(pending, task);
+    if (badges.length === 0) {
+      if (task.jobId) pendingChecks.delete(task.jobId);
+      if (taskQueue.length > 0) scheduleDispatch();
+      return;
+    }
+
+    if (sessionHalted || sessionFetchesUsed >= SESSION_FETCH_BUDGET) {
+      sessionHalted = true;
+      for (const badge of badges) applyCheckError(badge);
       if (task.jobId) pendingChecks.delete(task.jobId);
       if (taskQueue.length > 0) scheduleDispatch();
       return;
     }
 
     activeCount++;
+    sessionFetchesUsed++;
     checkSalaryForJob(task.jobId, task.defaultCurrency)
       .then(async (info) => {
         const cache = globalThis.LgsCache;
@@ -599,11 +648,14 @@
       signal: controller.signal,
     })
       .then((response) => {
-        if (response.status === 429) {
+        if (response.status === 429 || response.status === 999) {
+          consecutiveRateLimits++;
+          if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) sessionHalted = true;
           const scheduler = getScheduler();
-          const retryAfter = scheduler
-            ? scheduler.parseRetryAfter(response.headers.get("retry-after"))
-            : Number(response.headers.get("retry-after")) * 1000;
+          const retryAfter =
+            response.status === 429 && scheduler
+              ? scheduler.parseRetryAfter(response.headers.get("retry-after"))
+              : Number(response.headers.get("retry-after")) * 1000;
           const backoffMs = Number.isFinite(retryAfter) && retryAfter > 0
             ? Math.min(retryAfter, MAX_BACKOFF_MS)
             : DEFAULT_BACKOFF_MS;
@@ -611,11 +663,22 @@
           throw new Error("rate limited");
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        consecutiveRateLimits = 0;
         const contentType = response.headers.get("content-type") || "";
         if (!contentType.includes("text/html")) {
           throw new Error(`unexpected content type: ${contentType}`);
         }
+        const contentLength = Number(response.headers.get("content-length"));
+        if (Number.isFinite(contentLength) && contentLength > MAX_DESCRIPTION_BYTES) {
+          throw new Error("description too large");
+        }
         return response.text();
+      })
+      .then((html) => {
+        if (html.length > MAX_DESCRIPTION_BYTES) {
+          throw new Error("description too large");
+        }
+        return html;
       })
       .then(extractDescriptionText)
       .finally(() => {
@@ -946,7 +1009,11 @@
     closeButton.type = "button";
     closeButton.className = "lgs96-feedback__button lgs96-feedback__button--primary";
 
-    dialog.append(title, message, closeButton);
+    const buttonsRow = document.createElement("div");
+    buttonsRow.className = "lgs96-feedback__buttons";
+    buttonsRow.appendChild(closeButton);
+
+    dialog.append(title, message, buttonsRow);
     backdrop.appendChild(dialog);
     document.body.appendChild(backdrop);
 
@@ -1155,15 +1222,44 @@
     });
   }
 
+  function loadDispatchInterval() {
+    const scheduler = getScheduler();
+    if (!scheduler) return Promise.resolve();
+    return scheduler
+      .getRequestIntervalMs()
+      .then((intervalMs) => {
+        if (Number.isFinite(intervalMs) && intervalMs > 0) dispatchBaseMs = intervalMs;
+      })
+      .catch(() => {});
+  }
+
+  function watchFrequencyChanges() {
+    const scheduler = getScheduler();
+    if (
+      !scheduler ||
+      typeof chrome === "undefined" ||
+      !chrome.storage ||
+      !chrome.storage.onChanged
+    ) {
+      return;
+    }
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes[scheduler.SETTING_KEY]) return;
+      loadDispatchInterval();
+    });
+  }
+
   function bootstrap() {
     fetchLocalizationState()
       .then((state) => {
         if (state) localizationState = state;
       })
       .catch(() => {})
+      .then(() => loadDispatchInterval())
       .then(() => {
         start();
         watchLanguageChanges();
+        watchFrequencyChanges();
       });
   }
 

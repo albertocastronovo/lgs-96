@@ -8,7 +8,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : self, () => {
   "use strict";
 
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
   const TTL_MS = 3 * 24 * 60 * 60 * 1000;
   const SETTING_KEY = "lgs96:cacheEnabled";
   const JOB_PREFIX = "lgs96:job:";

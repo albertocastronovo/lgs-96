@@ -202,7 +202,7 @@ test("manifest packages the MVP: no cloud, feedback reporting enabled", () => {
   assert.equal(manifest.name, "__MSG_extension_name__");
   assert.equal(manifest.description, "__MSG_extension_description__");
   assert.equal(manifest.action.default_title, "__MSG_extension_action_title__");
-  assert.equal(manifest.version, "0.11.1");
+  assert.equal(manifest.version, "1.0.0");
   assert.deepEqual(manifest.host_permissions, ["https://formsubmit.co/*"]);
 
   const scripts = manifest.content_scripts[0].js;
@@ -223,4 +223,26 @@ test("popup hard-disables cloud cache and drops its module", () => {
   assert.ok(html.includes("popup__row--disabled"), "cloud row disabled");
   assert.ok(html.includes('id="popup-disclaimer"'), "disclaimer present");
   assert.ok(html.indexOf("language-select") < html.indexOf("cache-toggle"), "language first");
+  assert.ok(html.includes('id="request-frequency-select"'), "frequency select present");
+  assert.ok(html.includes("src/scheduler.js"), "popup loads scheduler module");
+  assert.ok(
+    html.indexOf("language-select") < html.indexOf("request-frequency-select") &&
+      html.indexOf("request-frequency-select") < html.indexOf("cache-toggle"),
+    "frequency row sits between language and cache"
+  );
+});
+
+test("request frequency wording matches the agreed labels", () => {
+  const en = fs.readFileSync(
+    path.join(root, "extension", "localization", "en.yaml"),
+    "utf8"
+  );
+  const it = fs.readFileSync(
+    path.join(root, "extension", "localization", "it.yaml"),
+    "utf8"
+  );
+  assert.match(en, /popup_request_frequency_label: "Request frequency"/);
+  assert.match(it, /popup_request_frequency_label: "Frequenza richieste"/);
+  assert.match(en, /popup_request_frequency_slow: "Slow \(every 2\.5 s\)"/);
+  assert.match(it, /popup_request_frequency_slow: "Lenta \(ogni 2,5 s\)"/);
 });

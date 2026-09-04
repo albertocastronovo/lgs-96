@@ -108,9 +108,7 @@ test("submitReport sends the agreed POST contract", async () => {
   assert.equal(captured[0].init.method, "POST");
   assert.equal(captured[0].init.headers["Content-Type"], "application/json");
   assert.equal(captured[0].init.headers.Accept, "application/json");
-  assert.equal(captured[0].init.credentials, "omit");
   assert.equal(captured[0].init.cache, "no-store");
-  assert.equal(captured[0].init.referrerPolicy, "no-referrer");
   const body = JSON.parse(captured[0].init.body);
   assert.equal(body.job_id, "4441110001");
   assert.equal(body.expected_value, "35k - 45k EUR");

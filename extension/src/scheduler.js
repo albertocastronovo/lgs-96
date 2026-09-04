@@ -36,5 +36,58 @@
     return Math.max(0, date - at);
   }
 
-  return { computeDelay, parseRetryAfter };
+  const SETTING_KEY = "lgs96:requestFrequency";
+  const FREQUENCY_PRESETS = { slow: 2500, average: 1600, fast: 1000 };
+  const DEFAULT_FREQUENCY = "average";
+  const DEFAULT_INTERVAL_MS = FREQUENCY_PRESETS[DEFAULT_FREQUENCY];
+
+  function storage() {
+    const chromeApi = typeof chrome !== "undefined" ? chrome : null;
+    return chromeApi && chromeApi.storage && chromeApi.storage.local
+      ? chromeApi.storage.local
+      : null;
+  }
+
+  async function getRequestFrequency() {
+    const local = storage();
+    if (!local) return DEFAULT_FREQUENCY;
+    try {
+      const data = await local.get(SETTING_KEY);
+      const stored = data ? data[SETTING_KEY] : null;
+      return Object.prototype.hasOwnProperty.call(FREQUENCY_PRESETS, stored)
+        ? stored
+        : DEFAULT_FREQUENCY;
+    } catch (error) {
+      return DEFAULT_FREQUENCY;
+    }
+  }
+
+  async function setRequestFrequency(preset) {
+    if (!Object.prototype.hasOwnProperty.call(FREQUENCY_PRESETS, preset)) return false;
+    const local = storage();
+    if (!local) return false;
+    try {
+      await local.set({ [SETTING_KEY]: preset });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async function getRequestIntervalMs() {
+    const preset = await getRequestFrequency();
+    return FREQUENCY_PRESETS[preset] || DEFAULT_INTERVAL_MS;
+  }
+
+  return {
+    SETTING_KEY,
+    FREQUENCY_PRESETS,
+    DEFAULT_FREQUENCY,
+    DEFAULT_INTERVAL_MS,
+    computeDelay,
+    parseRetryAfter,
+    getRequestFrequency,
+    setRequestFrequency,
+    getRequestIntervalMs,
+  };
 });

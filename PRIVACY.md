@@ -1,6 +1,6 @@
 # LGS-96 Privacy Policy
 
-_Last updated: 2026-08-31 (version 0.11.0)_
+_Last updated: 2026-09-02 (version 1.0.0)_
 
 LGS-96 is an unofficial browser extension that shows salary indications found in
 LinkedIn job postings directly on the job cards of the search results. It is **not
@@ -26,7 +26,8 @@ affiliated with, endorsed by, or connected to LinkedIn in any way**.
 
 1. **LinkedIn**: for each job card without native salary text and without a cached
    result, the extension requests the public job-posting page from LinkedIn
-   (roughly one request every 1.5 seconds at most, with backoff when rate limited).
+   (roughly one request every 1 to 2.5 seconds at most, configurable in the popup,
+   with backoff when rate limited and a per-session request budget).
    These requests happen on your browser and may be associated with your LinkedIn
    session by LinkedIn.
 2. **Feedback reports (only when you explicitly submit one)**: when you hover a

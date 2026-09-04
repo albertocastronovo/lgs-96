@@ -20,6 +20,21 @@
   "popup_language_label": {
     "message": "Language"
   },
+  "popup_request_frequency_label": {
+    "message": "Request frequency"
+  },
+  "popup_request_frequency_slow": {
+    "message": "Slow (every 2.5 s)"
+  },
+  "popup_request_frequency_average": {
+    "message": "Average (every 1.6 s)"
+  },
+  "popup_request_frequency_fast": {
+    "message": "Fast (every 1 s)"
+  },
+  "popup_request_frequency_hint": {
+    "message": "Choose a slower pace if salary checks fail or cards seem stuck."
+  },
   "popup_local_cache": {
     "message": "Local cache"
   },

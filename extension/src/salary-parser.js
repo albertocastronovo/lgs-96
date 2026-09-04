@@ -188,8 +188,11 @@
     return "approx";
   }
 
+  const SUPPLEMENTAL_MODIFIER_SRC =
+    "(?:signing|sign[- ]on|performance|productivity|referral|annual|annuale|annuo|trimestrale|one[- ]time|target|discretionary|cash|firma)";
+
   const SUPPLEMENTAL_LABEL_SRC =
-    "(?:signing|performance|productivity|referral|annual|annuale|annuo|trimestrale|one[- ]time|target|discretionary|firma)?\\s*(?:bonus|incentiv\\w*|premi\\w*|gratific\\w*|buoni?)";
+    `(?:${SUPPLEMENTAL_MODIFIER_SRC}\\s+)*(?:bonus|incentiv\\w*|premi\\w*|gratific\\w*|buoni?|superminim\\w*)`;
 
   const SUPPLEMENTAL_BEFORE_RE = new RegExp(
     `${SUPPLEMENTAL_LABEL_SRC}(?:\\s*(?:di|of|del|della|:))?\\s*$`,
@@ -231,6 +234,7 @@
         currency = options.defaultCurrency;
       }
       spans.push([m.index, rangeRe.lastIndex]);
+      if (isSupplementalAmount(line, m.index, rangeRe.lastIndex)) continue;
       const minRaw = parseNum(m[2]);
       const maxRaw = parseNum(m[5]);
       if (minRaw === null || maxRaw === null) continue;

@@ -7,3 +7,12 @@ opencode.json
 
 # debug
 .screenshots
+
+# chrome-generated metadata for unpacked extensions
+extension/_metadata/
+
+# release build output
+dist/
+
+# future features
+cache_server/
