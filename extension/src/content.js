@@ -6,6 +6,8 @@
     '[data-testid="JobsHomeFeedModuleListCollection"] a[href*="currentJobId="]';
   const VOYAGER_CARD_SELECTOR =
     'li[data-occludable-job-id] .job-card-container[data-job-id], .scaffold-layout__list-item .job-card-container[data-job-id]';
+  const BLENDED_SEARCH_CARD_SELECTOR =
+    'a[href*="/jobs/search-results/"][href*="currentJobId="]';
   const BADGE_CLASS = "lgs96-badge";
   const SPINNER_CLASS = "lgs96-badge__spinner";
   const LIGHT_CLASS = "lgs96-badge__light";
@@ -302,6 +304,7 @@
     document.querySelectorAll(RESULT_CARD_SELECTOR).forEach((card) => candidates.add(card));
     document.querySelectorAll(HOME_CARD_SELECTOR).forEach((card) => candidates.add(card));
     document.querySelectorAll(VOYAGER_CARD_SELECTOR).forEach((card) => candidates.add(card));
+    document.querySelectorAll(BLENDED_SEARCH_CARD_SELECTOR).forEach((card) => candidates.add(card));
     return candidates;
   }
 

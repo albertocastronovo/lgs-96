@@ -9,7 +9,7 @@
   "use strict";
 
   const SUPPORTED_PATH_RE =
-    /^\/jobs\/?(?:$|\/(?:search|search-results|collections)(?:\/.*)?$)/;
+    /^\/jobs\/?(?:$|\/(?:search|search-results|collections)(?:\/.*)?$)|^\/search\/results\/all\/?$/;
   const VIEW_PATH_RE = /^\/jobs\/view\/(\d+)\/?$/;
 
   function isSupportedJobsList(pathname) {

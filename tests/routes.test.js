@@ -15,6 +15,8 @@ test("supported jobs-list routes", () => {
     "/jobs/collections/",
     "/jobs/collections/recommended",
     "/jobs/collections/recommended/",
+    "/search/results/all",
+    "/search/results/all/",
   ];
   for (const pathname of supported) {
     assert.equal(routes.isSupportedJobsList(pathname), true, pathname);
@@ -33,6 +35,12 @@ test("unsupported routes", () => {
     "/jobs2",
     "/jobs/search-resultsfoo",
     "/myprefs",
+    "/search/results/people",
+    "/search/results/content",
+    "/search/results/jobs",
+    "/search/results/allies",
+    "/search",
+    "/search/results",
   ];
   for (const pathname of unsupported) {
     assert.equal(routes.isSupportedJobsList(pathname), false, pathname);

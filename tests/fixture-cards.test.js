@@ -10,6 +10,7 @@ const recommended = fs.readFileSync(
   "utf8"
 );
 const card = fs.readFileSync(path.join(__dirname, "..", "pages", "recommendedcard.html"), "utf8");
+const search = fs.readFileSync(path.join(__dirname, "..", "pages", "search.html"), "utf8");
 
 const MARKER = 'data-occludable-job-id="';
 
@@ -87,5 +88,55 @@ test("recommendedcard.html: native salary parses and classifies narrow", () => {
   assert.deepEqual(
     [compact.info.min, compact.info.max],
     [26000, 28000]
+  );
+});
+
+test("search.html: blended all-search renders three job cards plus a bare see-all link", () => {
+  const allSearchHrefs = [...search.matchAll(/href="([^"]*\/jobs\/search-results\/[^"]*)"/g)].map(
+    (m) => m[1]
+  );
+  assert.equal(
+    allSearchHrefs.length,
+    5,
+    "search-results links: 3 cards + see-all + vertical switch"
+  );
+
+  const cardHrefs = allSearchHrefs.filter((href) => href.includes("currentJobId="));
+  assert.equal(cardHrefs.length, 3, "exactly three blended job cards");
+  const ids = cardHrefs.map((href) =>
+    routes.extractJobIdFromHref(href.replace(/&amp;/g, "&"), "https://www.linkedin.com/")
+  );
+  assert.deepEqual(
+    [...new Set(ids)].sort(),
+    ["4404067785", "4435556057", "4450337951"],
+    "card ids resolved from currentJobId"
+  );
+
+  const nonCardHrefs = allSearchHrefs.filter((href) => !href.includes("currentJobId="));
+  assert.equal(nonCardHrefs.length, 2, "see-all and vertical switch carry no job id");
+  assert.ok(
+    nonCardHrefs.some((href) => /\/jobs\/search-results\/?$/.test(href)),
+    "bare see-all link present"
+  );
+
+  assert.equal((search.match(/Pubblicata/g) || []).length, 3, "posted-time paragraph per card");
+  for (const company of ["Prima", "Klarna", "BCG X"]) {
+    assert.ok(search.includes(company), `company paragraph for ${company}`);
+  }
+  for (const title of [
+    "Math, Physics &amp; Engineering Graduates",
+    "Senior/Lead Data Scientist-Fraud",
+    "Forward Deployed AI Scientist, Italy - BCG X",
+  ]) {
+    assert.ok(search.includes(title), `title paragraph: ${title}`);
+  }
+
+  const contentSource = fs.readFileSync(
+    path.join(__dirname, "..", "extension", "src", "content.js"),
+    "utf8"
+  );
+  assert.ok(
+    contentSource.includes('a[href*="/jobs/search-results/"]'),
+    "content script discovers blended search cards"
   );
 });

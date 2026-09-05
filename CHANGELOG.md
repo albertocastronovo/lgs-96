@@ -5,6 +5,9 @@
 First stable release prepared for the Chrome Web Store.
 
 ### Added
+- Support for the general LinkedIn search results page (/search/results/all):
+  salary badges are added to the job cards of the "Offerte di lavoro" / "Job offers"
+  module.
 - "Request frequency" setting (Slow 2.5 s / Average 1.6 s / Fast 1 s) that controls
   the delay between job-posting requests; changes apply live without reloading.
 - Help button in the popup (top-right) linking to the GitHub README.
