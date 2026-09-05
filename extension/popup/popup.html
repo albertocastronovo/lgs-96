@@ -7,10 +7,13 @@
 </head>
 <body>
   <main class="popup">
-    <header class="popup__header">
-      <span class="popup__brand" id="popup-brand"></span>
-      <span class="popup__subtitle" id="popup-subtitle"></span>
-    </header>
+    <div class="popup__topbar">
+      <header class="popup__header">
+        <span class="popup__brand" id="popup-brand"></span>
+        <span class="popup__subtitle" id="popup-subtitle"></span>
+      </header>
+      <a id="help-link" class="popup__help" href="https://github.com/albertocastronovo/lgs-96#readme" target="_blank" rel="noopener noreferrer"></a>
+    </div>
 
     <p class="popup__disclaimer" id="popup-disclaimer"></p>
 
@@ -50,6 +53,8 @@
     </section>
 
     <button type="button" id="clear-cache" class="popup__button"></button>
+
+    <a id="kofi-button" class="popup__support" href="https://ko-fi.com/albertocastronovo" target="_blank" rel="noopener noreferrer"></a>
   </main>
 
   <script src="../src/cache.js"></script>

@@ -7,6 +7,8 @@ First stable release prepared for the Chrome Web Store.
 ### Added
 - "Request frequency" setting (Slow 2.5 s / Average 1.6 s / Fast 1 s) that controls
   the delay between job-posting requests; changes apply live without reloading.
+- Help button in the popup (top-right) linking to the GitHub README.
+- "Buy me a coffee" support button in the popup linking to the author's Ko-Fi page.
 - Visible-first scheduling: cards on screen are checked before cards outside the
   viewport.
 - Session request budget (80 job-posting requests per page session) and a circuit
@@ -19,6 +21,8 @@ First stable release prepared for the Chrome Web Store.
 - Parser: supplemental amounts (signing bonus, sign-on bonus, one-time/performance
   bonuses, productivity incentives, superminimo) can no longer pollute detected
   ranges, including stacked modifiers and bonus ranges.
+- Parser: currency codes written directly against the amount (e.g. "EUR104,500")
+  are now recognized.
 - Local cache schema bumped to v2: results cached by older versions are purged
   automatically so corrected parsing takes effect immediately.
 - Job-posting responses larger than 1 MB are rejected.

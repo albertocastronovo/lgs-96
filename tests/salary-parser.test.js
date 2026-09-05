@@ -129,6 +129,21 @@ test("productivity incentive clause keeps the RAL value", () => {
   assert.deepEqual(toComparable(info), [40000]);
 });
 
+test("currency code glued to the amount is recognized", () => {
+  const info = SalaryParser.findSalaryInfo("Italy- EUR104,500 gross annually.");
+  assert.equal(info.currency, "EUR");
+  assert.deepEqual(toComparable(info), [104500]);
+
+  const usd = SalaryParser.findSalaryInfo("Base pay USD120,000 per year.");
+  assert.equal(usd.currency, "USD");
+  assert.deepEqual(toComparable(usd), [120000]);
+});
+
+test("currency word inside a longer word is still ignored", () => {
+  const info = SalaryParser.findSalaryInfo("EUROzone 30.000 - 45.000.");
+  assert.deepEqual(toComparable(info), []);
+});
+
 test("range promised before interview stays unrecognized", () => {
   const record = fixtures.find((r) => r.description.includes("verrà sempre condiviso"));
   const info = SalaryParser.findSalaryInfo(record.description, {

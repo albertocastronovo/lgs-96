@@ -8,6 +8,8 @@
   const brand = document.getElementById("popup-brand");
   const subtitle = document.getElementById("popup-subtitle");
   const disclaimer = document.getElementById("popup-disclaimer");
+  const helpLink = document.getElementById("help-link");
+  const kofiButton = document.getElementById("kofi-button");
   const languageLabel = document.getElementById("language-label");
   const languageSelect = document.getElementById("language-select");
   const frequencyLabel = document.getElementById("request-frequency-label");
@@ -109,6 +111,8 @@
     brand.textContent = t("extension_name");
     subtitle.textContent = t("popup_subtitle");
     disclaimer.textContent = t("popup_disclaimer");
+    helpLink.textContent = t("popup_help");
+    kofiButton.textContent = t("popup_support");
     languageLabel.textContent = t("popup_language_label");
     renderLanguageOptions();
     await renderFrequencyOptions();

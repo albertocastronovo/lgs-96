@@ -81,7 +81,7 @@
     .map(escapeRegExp)
     .join("|");
 
-  const CUR_SRC = `(?:${SYMBOL_ALTS}|\\b(?:${WORD_ALTS})\\b)`;
+  const CUR_SRC = `(?:${SYMBOL_ALTS}|\\b(?:${WORD_ALTS})(?![A-Za-z]))`;
   const NUM_SRC =
     "(?:\\d{1,3}(?:[.,]\\d{1,2})?\\s*[kK]|\\d{1,3}(?:[.,\u00A0]\\d{3})+|\\d{4,7}|\\d{1,3}[.,]\\d{1,2})";
   const PT_SRC =

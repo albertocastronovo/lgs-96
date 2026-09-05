@@ -230,6 +230,24 @@ test("popup hard-disables cloud cache and drops its module", () => {
       html.indexOf("request-frequency-select") < html.indexOf("cache-toggle"),
     "frequency row sits between language and cache"
   );
+  assert.ok(
+    html.includes('href="https://github.com/albertocastronovo/lgs-96#readme"'),
+    "help link points to the repo README"
+  );
+  assert.ok(html.includes('id="help-link"'), "help link present");
+  assert.ok(html.includes('id="kofi-button"'), "kofi button present");
+  assert.ok(
+    html.includes('href="https://ko-fi.com/albertocastronovo"'),
+    "kofi button points to the author page"
+  );
+  const externalLinks = (html.match(/target="_blank" rel="noopener noreferrer"/g) || [])
+    .length;
+  assert.ok(externalLinks >= 2, "external links open safely in a new tab");
+  assert.ok(
+    html.indexOf("help-link") < html.indexOf("cache-toggle") &&
+      html.lastIndexOf("kofi-button") > html.indexOf("clear-cache"),
+    "help on top, kofi at the bottom"
+  );
 });
 
 test("request frequency wording matches the agreed labels", () => {
@@ -245,4 +263,19 @@ test("request frequency wording matches the agreed labels", () => {
   assert.match(it, /popup_request_frequency_label: "Frequenza richieste"/);
   assert.match(en, /popup_request_frequency_slow: "Slow \(every 2\.5 s\)"/);
   assert.match(it, /popup_request_frequency_slow: "Lenta \(ogni 2,5 s\)"/);
+});
+
+test("support and help wording matches the agreed labels", () => {
+  const en = fs.readFileSync(
+    path.join(root, "extension", "localization", "en.yaml"),
+    "utf8"
+  );
+  const it = fs.readFileSync(
+    path.join(root, "extension", "localization", "it.yaml"),
+    "utf8"
+  );
+  assert.match(en, /popup_help: "Help"/);
+  assert.match(it, /popup_help: "Aiuto"/);
+  assert.match(en, /popup_support: "Buy me a coffee ☕"/);
+  assert.match(it, /popup_support: "Offrimi un caffè ☕"/);
 });

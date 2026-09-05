@@ -56,6 +56,12 @@
   "popup_clear_cache": {
     "message": "Pulisci cache"
   },
+  "popup_help": {
+    "message": "Aiuto"
+  },
+  "popup_support": {
+    "message": "Offrimi un caffè ☕"
+  },
   "badge_loading": {
     "message": "Sto cercando la RAL..."
   },

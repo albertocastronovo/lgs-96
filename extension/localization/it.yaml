@@ -20,6 +20,8 @@ popup_disclaimer: "I risultati sono estratti automaticamente e possono essere in
 popup_cached_jobs: "Inserzioni nella cache: {count}"
 popup_cache_unavailable: "Cache non disponibile"
 popup_clear_cache: "Pulisci cache"
+popup_help: "Aiuto"
+popup_support: "Offrimi un caffè ☕"
 badge_loading: "Sto cercando la RAL..."
 badge_none: "RAL non rilevata"
 badge_error: "Lettura RAL fallita"

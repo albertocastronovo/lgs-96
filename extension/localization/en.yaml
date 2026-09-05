@@ -20,6 +20,8 @@ popup_disclaimer: "Results are extracted automatically and may be incomplete or 
 popup_cached_jobs: "Cached jobs: {count}"
 popup_cache_unavailable: "Cache unavailable"
 popup_clear_cache: "Clear cache"
+popup_help: "Help"
+popup_support: "Buy me a coffee ☕"
 badge_loading: "Fetching salary info..."
 badge_none: "Salary not detected"
 badge_error: "Salary check failed"
