@@ -30,8 +30,9 @@ First stable release prepared for the Chrome Web Store.
   automatically so corrected parsing takes effect immediately.
 - Job-posting responses larger than 1 MB are rejected.
 - Documentation: README, LICENSE (MIT), SECURITY, CONTRIBUTING, CHANGELOG, store
-  listing draft; HTML fixtures sanitized (scripts, tracking parameters and profile
-  handles removed).
+  listing draft; HTML fixtures fully anonymized (scripts and serialized state
+  blobs stripped; person names, job titles, companies, locations and image URLs
+  replaced with placeholders; enforced by a dedicated guard test in CI).
 
 ## 0.11.1 — 2026-09-01
 

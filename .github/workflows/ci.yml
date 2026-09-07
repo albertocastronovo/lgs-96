@@ -21,7 +21,8 @@ jobs:
           node --test tests/salary-parser.test.js tests/cache.test.js
           tests/scheduler.test.js tests/feedback.test.js
           tests/localization.test.js tests/routes.test.js
-          tests/fixture-cards.test.js tests/cloud-cache.test.js
+          tests/fixture-cards.test.js tests/fixtures-sanitized.test.js
+          tests/cloud-cache.test.js
       - name: Build release package
         run: node scripts/package.js
       - name: Upload package artifact

@@ -46,7 +46,7 @@ See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 The project is dependency-free plain JavaScript. Run the test suite with:
 
 ```
-node --test tests/salary-parser.test.js tests/cache.test.js tests/scheduler.test.js tests/feedback.test.js tests/localization.test.js tests/routes.test.js tests/fixture-cards.test.js tests/cloud-cache.test.js
+node --test tests/salary-parser.test.js tests/cache.test.js tests/scheduler.test.js tests/feedback.test.js tests/localization.test.js tests/routes.test.js tests/fixture-cards.test.js tests/fixtures-sanitized.test.js tests/cloud-cache.test.js
 ```
 
 Utility scripts:

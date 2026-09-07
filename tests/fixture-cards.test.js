@@ -64,7 +64,7 @@ test("recommendedcard.html: single job card contract", () => {
   assert.ok(card.includes("job-card-container"), "card container class");
   assert.ok(card.includes("artdeco-entity-lockup__title"), "title wrapper present");
   assert.ok(card.includes("artdeco-entity-lockup__caption"), "caption present");
-  assert.ok(card.includes("Torino, Piemonte, Italia (In sede)"), "location text");
+  assert.ok(card.includes("Demo City, Demo Region, Italia (In sede)"), "location text");
   assert.ok(card.includes("24K&nbsp;€/anno - 28K&nbsp;€/anno"), "native salary text");
 
   const viewLinks = [...card.matchAll(/href="(\/jobs\/view\/\d+\/[^"]*)"/g)].map((m) => m[1]);
@@ -120,15 +120,16 @@ test("search.html: blended all-search renders three job cards plus a bare see-al
   );
 
   assert.equal((search.match(/Pubblicata/g) || []).length, 3, "posted-time paragraph per card");
-  for (const company of ["Prima", "Klarna", "BCG X"]) {
-    assert.ok(search.includes(company), `company paragraph for ${company}`);
-  }
+  assert.ok(
+    (search.match(/Example Text/g) || []).length >= 20,
+    "card contents are anonymized placeholders"
+  );
   for (const title of [
     "Math, Physics &amp; Engineering Graduates",
     "Senior/Lead Data Scientist-Fraud",
     "Forward Deployed AI Scientist, Italy - BCG X",
   ]) {
-    assert.ok(search.includes(title), `title paragraph: ${title}`);
+    assert.equal(search.includes(title), false, `real job title removed: ${title}`);
   }
 
   const contentSource = fs.readFileSync(

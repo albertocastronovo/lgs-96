@@ -7,6 +7,7 @@ const PAGES_DIR = path.join(__dirname, "..", "pages");
 
 const SCRIPT_RE = /<script\b[\s\S]*?<\/script\s*>/gi;
 const NOSCRIPT_RE = /<noscript\b[\s\S]*?<\/noscript\s*>/gi;
+const CODE_STATE_RE = /<code\b[\s\S]*?<\/code\s*>/gi;
 
 function reset(re) {
   re.lastIndex = 0;
@@ -17,6 +18,9 @@ const PROFILE_HANDLE_RE = /(\/in\/)[^\/"'?&\s<)]+/gi;
 const URL_ATTR_RE = /\b(href|src|data-url|content)="([^"]*)"/gi;
 const PROFILE_ARIA_RE = /\b(aria-label)="([^"]*profile[^"]*)"/gi;
 const HIDDEN_INPUT_VALUE_RE = /(<input[^>]*type="hidden"[^>]*\bvalue=")([^"]{33,})(")/gi;
+const LICDN_IMAGE_RE = /https:\/\/media\.licdn\.com\/[^\s"']+/gi;
+const PROFILE_TOKEN_RE = /ACoAA[A-Za-z0-9_-]{10,}/g;
+const MEMBER_URN_RE = /urn:li:member:\d+/g;
 
 function stripTrackingParams(url) {
   if (!url || !url.includes("?")) return url;
@@ -28,22 +32,43 @@ function stripTrackingParams(url) {
   });
 }
 
-function sanitize(html) {
+function anonymize(html) {
+  const tokens = new Map();
   return html
-    .replace(SCRIPT_RE, "")
-    .replace(NOSCRIPT_RE, "")
-    .replace(INLINE_EVENT_RE, "")
-    .replace(URL_ATTR_RE, (match, attr, value) => `${attr}="${stripTrackingParams(value)}"`)
-    .replace(PROFILE_HANDLE_RE, "$1redacted-person")
-    .replace(PROFILE_ARIA_RE, '$1="View profile"')
-    .replace(HIDDEN_INPUT_VALUE_RE, "$1REDACTED$3");
+    .replace(LICDN_IMAGE_RE, "https://example.com/logo.png")
+    .replace(PROFILE_TOKEN_RE, (match) => {
+      if (!tokens.has(match)) tokens.set(match, `RedactedProfileToken${tokens.size + 1}`);
+      return tokens.get(match);
+    })
+    .replace(MEMBER_URN_RE, "urn:li:member:Redacted");
+}
+
+function sanitize(html) {
+  return anonymize(
+    html
+      .replace(SCRIPT_RE, "")
+      .replace(NOSCRIPT_RE, "")
+      .replace(CODE_STATE_RE, "")
+      .replace(INLINE_EVENT_RE, "")
+      .replace(URL_ATTR_RE, (match, attr, value) => `${attr}="${stripTrackingParams(value)}"`)
+      .replace(PROFILE_HANDLE_RE, "$1redacted-person")
+      .replace(PROFILE_ARIA_RE, '$1="View profile"')
+      .replace(HIDDEN_INPUT_VALUE_RE, "$1REDACTED$3")
+  );
 }
 
 function isSanitized(html) {
-  const scriptFree = !reset(SCRIPT_RE).test(html) && !reset(NOSCRIPT_RE).test(html);
+  const clean =
+    !reset(SCRIPT_RE).test(html) &&
+    !reset(NOSCRIPT_RE).test(html) &&
+    !reset(CODE_STATE_RE).test(html) &&
+    !LICDN_IMAGE_RE.test(html) &&
+    !PROFILE_TOKEN_RE.test(html) &&
+    !MEMBER_URN_RE.test(html);
   reset(SCRIPT_RE);
   reset(NOSCRIPT_RE);
-  return scriptFree;
+  reset(CODE_STATE_RE);
+  return clean;
 }
 
 function main() {

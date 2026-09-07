@@ -14,8 +14,5 @@ extension/_metadata/
 # release build output
 dist/
 
-# training pages
-pages/
-
 # future features
 cache_server/

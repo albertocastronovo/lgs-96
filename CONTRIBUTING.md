@@ -16,7 +16,7 @@ dependency-free plain JavaScript.
 Run the full suite before opening a PR:
 
 ```
-node --test tests/salary-parser.test.js tests/cache.test.js tests/scheduler.test.js tests/feedback.test.js tests/localization.test.js tests/routes.test.js tests/fixture-cards.test.js tests/cloud-cache.test.js
+node --test tests/salary-parser.test.js tests/cache.test.js tests/scheduler.test.js tests/feedback.test.js tests/localization.test.js tests/routes.test.js tests/fixture-cards.test.js tests/fixtures-sanitized.test.js tests/cloud-cache.test.js
 ```
 
 Parser behavior is locked down by `train/salary.json` fixtures plus dedicated tests
