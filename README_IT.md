@@ -42,11 +42,11 @@ Scarica l'estensione [qui!](https://google.com)
 
 Cliccando l'icona dell'estensione in alto a destra, puoi accedere alle sue impostazioni:  
 <img src="readme_pictures/lgs96_settings.png" width="200">  
-- **Lingua: **
-- **Frequenza richieste: **
-- **Cache locale: **
-- **Cache cloud: **
-- **Pulisci cache: **
+- **Lingua: ** seleziona una delle lingue supportate. Al momento, sono presenti italiano e inglese. Il valore predefinito è inglese;
+- **Frequenza richieste: ** definisce il timeout minimo tra due richieste consecutive alle API di linkedIn. Non ha effetto sulla velocità con cui i risultati vengono presi dalla cache locale. Si raccomanda di passare a un tempo superiore se si arriva al rate-limiting di LinkedIn. Le opzioni sono _Lenta (2.5 s)_, _Media (1.6 s)_ e _Veloce (1 s)_; 
+- **Cache locale: ** per risparmiare tempo, i risultati degli ultimi 3 giorni vengono salvati in una cache locale. Quando visualizzi nuovamente lo stesso annuncio di lavoro, le sue informazioni vengono ottenute dalla memoria deo browser anziché dalle API di LinkedIn;
+- **Cache cloud: ** una possibile funzionalità futura, che consiste in una cache centralizzata a cui contribuiscono tutti gli utenti dell'estensione;
+- **Pulisci cache: ** questo pulsante svuota completamente la cache locale **senza chiedere conferma;**
 - **Offrimi un caffè: ** la funzionalità più importante di tutta l'estensione - ti manda alla mia [pagina di Ko-Fi](https://ko-fi.com/albertocastronovo) :heart:  
 
 Una volta configurata, apri semplicemente LinkedIn e la vedrai funzionare!  
