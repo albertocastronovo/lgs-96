@@ -1,7 +1,7 @@
 # LGS-96
 
 Leggi in altre lingue:
-- :en: [English] (README.md)
+- :us: [English] (README.md)
 
 LGS-96 è un'estensione di Chrome che mostra le informazioni sulla RAL trovate nella descrizione degli annunci di LinkedIn
 direttamente sulle card nei risultati di ricerca.  
