@@ -26,6 +26,8 @@ First stable release prepared for the Chrome Web Store.
   ranges, including stacked modifiers and bonus ranges.
 - Parser: currency codes written directly against the amount (e.g. "EUR104,500")
   are now recognized.
+- Parser: phone numbers (e.g. "+44 1189 840948") are no longer mistaken for bare
+  salary amounts.
 - Local cache schema bumped to v2: results cached by older versions are purged
   automatically so corrected parsing takes effect immediately.
 - Job-posting responses larger than 1 MB are rejected.
