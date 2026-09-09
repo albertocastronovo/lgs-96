@@ -40,7 +40,7 @@ Scarica l'estensione [qui!](https://google.com)
 
 ## Come si usa
 
-Cliccando l'icona dell'estensione in alto a destra, puoi accedere alle sue impostazioni:
+Cliccando l'icona dell'estensione in alto a destra, puoi accedere alle sue impostazioni:  
 <img src="readme_pictures/lgs96_settings.png" width="200">  
 - **Lingua: **
 - **Frequenza richieste: **
