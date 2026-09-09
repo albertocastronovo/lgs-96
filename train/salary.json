@@ -16,5 +16,6 @@
   {"description": "Inquadramento: Livello A2 del CCSL - RAL 28.000 + 1750 incentivo produttività", "expected": [28000]},
   {"description": "Il range retributivo specifico verrà sempre condiviso prima dell’eventuale colloquio sulla base della valutazione del profilo effettuata dal team di reclutamento.", "expected": []},
   {"description": "Compensation Salary: $150,000–$250,000 USD $20,000 signing bonus 4 weeks vacation + country-specific holidayFully remote", "expected": [150000, 250000]},
-  {"description": "Italy- EUR104,500 gross annually.", "expected": [104500]}
+  {"description": "Italy- EUR104,500 gross annually.", "expected": [104500]},
+  {"description": "Waiting for you, you will find a very positive, friendly working environment, flexible working opportunities and on-going career progression opportunities. You can also expect a very attractive salary, bonus and full benefit package. For further information or to apply contact Adrian Wagstaff on +44 1189 840948 or email your CV to adrian.wagstaff@ic-resources.com", "expected": []}
 ]

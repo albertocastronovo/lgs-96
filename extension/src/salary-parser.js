@@ -212,9 +212,30 @@
     );
   }
 
+  const PHONE_CANDIDATE_RE =
+    /(?:\+\d{1,3}|(?<![\d.,])0\d{1,5}|\b(?:tel|telefon\w*|phone|call|mobile|whatsapp|chiamaci|chiamare|chiamata|contatta\w*)\b)(?:[\s.\-()]*\d+){1,5}/gi;
+
+  function collectPhoneSpans(line) {
+    const spans = [];
+    PHONE_CANDIDATE_RE.lastIndex = 0;
+    let match;
+    while ((match = PHONE_CANDIDATE_RE.exec(line)) !== null) {
+      const digits = match[0].replace(/\D/g, "");
+      if (digits.length >= 7) {
+        spans.push([match.index, PHONE_CANDIDATE_RE.lastIndex]);
+      }
+    }
+    return spans;
+  }
+
+  function overlapsAny(start, end, spans) {
+    return spans.some(([s, e]) => start < e && end > s);
+  }
+
   function collectLineFacts(line, facts, options = {}) {
     if (PERIOD_EXCLUDE_RE.test(line)) return;
 
+    const phoneSpans = collectPhoneSpans(line);
     const spans = [];
     const rangeRe = new RegExp(
       `(${CUR_SRC})?${PT_SRC}?\\s{0,3}(${NUM_SRC})\\s{0,2}(${CUR_SRC})?${PT_SRC}?` +
@@ -234,6 +255,7 @@
         currency = options.defaultCurrency;
       }
       spans.push([m.index, rangeRe.lastIndex]);
+      if (overlapsAny(m.index, rangeRe.lastIndex, phoneSpans)) continue;
       if (isSupplementalAmount(line, m.index, rangeRe.lastIndex)) continue;
       const minRaw = parseNum(m[2]);
       const maxRaw = parseNum(m[5]);
@@ -264,6 +286,7 @@
       const value = parseNum(m[2]);
       if (value === null) continue;
       if (isSupplementalAmount(line, start, end)) continue;
+      if (overlapsAny(start, end, phoneSpans)) continue;
       facts.push({
         kind: "single",
         value,

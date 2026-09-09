@@ -144,6 +144,55 @@ test("currency word inside a longer word is still ignored", () => {
   assert.deepEqual(toComparable(info), []);
 });
 
+test("phone number with country code is not a salary", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "You can expect a very attractive salary, bonus and full benefit package. For further information or to apply contact Adrian Wagstaff on +44 1189 840948 or email your CV.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), []);
+});
+
+test("leading-zero phone chain is not a salary", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Chiamaci allo 0118 984 0948 per informazioni sulla retribuzione.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), []);
+});
+
+test("keyword-adjacent phone number is not a salary", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Call 5551234 for a great salary package.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), []);
+});
+
+test("glued international phone number is not a salary", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Telefono +393351234567. Ottima retribuzione garantita.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), []);
+});
+
+test("real salary survives next to a phone number", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Salary: EUR 30,000 per year. Contact us on +44 1189 840948.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.equal(info.currency, "EUR");
+  assert.deepEqual(toComparable(info), [30000]);
+});
+
+test("compact bare range still parses", () => {
+  const info = SalaryParser.findSalaryInfo("salary 30000 - 45000 per year", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), [30000, 45000]);
+});
+
 test("range promised before interview stays unrecognized", () => {
   const record = fixtures.find((r) => r.description.includes("verrà sempre condiviso"));
   const info = SalaryParser.findSalaryInfo(record.description, {
