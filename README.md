@@ -34,7 +34,7 @@ ranges to be published in job postings. A generous amount of companies, though, 
 
 ### From the Chrome Web Store (recommended)
 
-Download it from [here!](https://google.com)
+Download it from [here!](https://chromewebstore.google.com/detail/jlhmooggdapjblphimkojmmadnjhcckn?utm_source=item-share-cb)
 
 ### From source
 

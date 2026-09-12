@@ -31,7 +31,7 @@ obbligherebbe le aziende a indicare i range retributivi negli annunci di lavoro 
 
 ### Dal Chrome Web Store (raccomandato)
 
-Scarica l'estensione [qui!](https://google.com)
+Scarica l'estensione [qui!](https://chromewebstore.google.com/detail/jlhmooggdapjblphimkojmmadnjhcckn?utm_source=item-share-cb)
 
 ### Dal codice sorgente
 
