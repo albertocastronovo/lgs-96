@@ -1,0 +1,137 @@
+{
+  "language_name": {
+    "message": "English"
+  },
+  "extension_name": {
+    "message": "LGS-96"
+  },
+  "extension_description": {
+    "message": "Flags LinkedIn job cards with salary-information status (Italian D.Lgs. 96/2026)."
+  },
+  "extension_action_title": {
+    "message": "LGS-96"
+  },
+  "popup_document_title": {
+    "message": "LGS-96"
+  },
+  "popup_subtitle": {
+    "message": "Settings"
+  },
+  "popup_language_label": {
+    "message": "Language"
+  },
+  "popup_request_frequency_label": {
+    "message": "Request frequency"
+  },
+  "popup_request_frequency_slow": {
+    "message": "Slow (every 2.5 s)"
+  },
+  "popup_request_frequency_average": {
+    "message": "Average (every 1.6 s)"
+  },
+  "popup_request_frequency_fast": {
+    "message": "Fast (every 1 s)"
+  },
+  "popup_request_frequency_hint": {
+    "message": "Choose a slower pace if salary checks fail or cards seem stuck."
+  },
+  "popup_local_cache": {
+    "message": "Local cache"
+  },
+  "popup_cloud_cache": {
+    "message": "Cloud cache"
+  },
+  "popup_cloud_coming_soon": {
+    "message": "Coming soon"
+  },
+  "popup_disclaimer": {
+    "message": "Results are extracted automatically and may be incomplete or wrong."
+  },
+  "popup_cached_jobs": {
+    "message": "Cached jobs: {count}"
+  },
+  "popup_cache_unavailable": {
+    "message": "Cache unavailable"
+  },
+  "popup_clear_cache": {
+    "message": "Clear cache"
+  },
+  "popup_help": {
+    "message": "Help"
+  },
+  "popup_support": {
+    "message": "Buy me a coffee ☕"
+  },
+  "badge_loading": {
+    "message": "Fetching salary info..."
+  },
+  "badge_none": {
+    "message": "Salary not detected"
+  },
+  "badge_error": {
+    "message": "Salary check failed"
+  },
+  "badge_report_action": {
+    "message": "Report an incorrect result"
+  },
+  "feedback_reported": {
+    "message": "Result reported"
+  },
+  "feedback_title": {
+    "message": "Report an incorrect result"
+  },
+  "feedback_description": {
+    "message": "Report for job {jobId}. Tell us what the posting actually contains."
+  },
+  "feedback_expected_label": {
+    "message": "This posting contains"
+  },
+  "feedback_expected_none": {
+    "message": "No salary information"
+  },
+  "feedback_expected_single": {
+    "message": "A single salary value"
+  },
+  "feedback_expected_range": {
+    "message": "A salary range"
+  },
+  "feedback_correction_label": {
+    "message": "What should it show? (max 50 characters)"
+  },
+  "feedback_correction_placeholder": {
+    "message": "e.g. 35k - 45k EUR"
+  },
+  "feedback_correction_required": {
+    "message": "Please describe what the posting should show."
+  },
+  "feedback_char_count": {
+    "message": "{count}/50"
+  },
+  "feedback_disclosure": {
+    "message": "Submitting sends the job ID and your feedback via FormSubmit to the extension author. See the Privacy Policy."
+  },
+  "feedback_privacy_link": {
+    "message": "Privacy Policy"
+  },
+  "feedback_cancel": {
+    "message": "Cancel"
+  },
+  "feedback_submit": {
+    "message": "Submit"
+  },
+  "feedback_submitting": {
+    "message": "Sending..."
+  },
+  "feedback_close": {
+    "message": "Close"
+  },
+  "feedback_thanks_title": {
+    "message": "Thank you!"
+  },
+  "feedback_thanks": {
+    "message": "Your report helps make LGS-96 more accurate."
+  },
+  "feedback_error": {
+    "message": "Something went wrong while sending your report. Please try again."
+  }
+}
