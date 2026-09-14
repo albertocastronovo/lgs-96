@@ -27,6 +27,10 @@
     "popup_request_frequency_average",
     "popup_request_frequency_fast",
     "popup_request_frequency_hint",
+    "popup_salary_filter_label",
+    "popup_salary_filter_hint",
+    "popup_salary_filter_target",
+    "popup_salary_filter_tolerance",
     "popup_local_cache",
     "popup_cloud_cache",
     "popup_cloud_coming_soon",
@@ -77,6 +81,10 @@
     popup_request_frequency_fast: "Fast (every 1 s)",
     popup_request_frequency_hint:
       "Choose a slower pace if salary checks fail or cards seem stuck.",
+    popup_salary_filter_label: "Preferred salary",
+    popup_salary_filter_hint: "Jobs within tolerance stay highlighted.",
+    popup_salary_filter_target: "Annual target",
+    popup_salary_filter_tolerance: "Tolerance %",
     popup_local_cache: "Local cache",
     popup_cloud_cache: "Cloud cache",
     popup_cloud_coming_soon: "Coming soon",
@@ -101,7 +109,8 @@
     feedback_expected_range: "A salary range",
     feedback_correction_label: "What should it show? (max 50 characters)",
     feedback_correction_placeholder: "e.g. 35k - 45k EUR",
-    feedback_correction_required: "Please describe what the posting should show.",
+    feedback_correction_required:
+      "Please describe what the posting should show.",
     feedback_char_count: "{count}/50",
     feedback_disclosure:
       "Submitting sends the job ID and your feedback via FormSubmit to the extension author. See the Privacy Policy.",
@@ -147,7 +156,7 @@
       let value;
       try {
         value = JSON.parse(`"${match[2]}"`);
-      } catch (error) {
+      } catch {
         errors.push(`line ${i + 1}: invalid quoted value`);
         continue;
       }
@@ -162,11 +171,18 @@
     for (const key of REQUIRED_KEYS) {
       if (!Object.prototype.hasOwnProperty.call(entries, key)) {
         missing.push(key);
-      } else if (typeof entries[key] !== "string" || entries[key].length === 0) {
+      } else if (
+        typeof entries[key] !== "string" ||
+        entries[key].length === 0
+      ) {
         empty.push(key);
       }
     }
-    return { valid: missing.length === 0 && empty.length === 0, missing, empty };
+    return {
+      valid: missing.length === 0 && empty.length === 0,
+      missing,
+      empty,
+    };
   }
 
   function buildCatalog(locale, text) {
@@ -206,12 +222,13 @@
     return String(template).replace(/\{(\w+)\}/g, (match, name) =>
       params && Object.prototype.hasOwnProperty.call(params, name)
         ? String(params[name])
-        : match
+        : match,
     );
   }
 
   function translate(entries, key, params) {
-    if (!entries || !Object.prototype.hasOwnProperty.call(entries, key)) return null;
+    if (!entries || !Object.prototype.hasOwnProperty.call(entries, key))
+      return null;
     const template = entries[key];
     if (typeof template !== "string") return null;
     return params ? interpolate(template, params) : template;
@@ -234,7 +251,7 @@
       const data = await local.get(SETTING_KEY);
       const stored = data ? data[SETTING_KEY] : null;
       return SUPPORTED_LOCALES.includes(stored) ? stored : DEFAULT_LOCALE;
-    } catch (error) {
+    } catch {
       return DEFAULT_LOCALE;
     }
   }
@@ -246,7 +263,7 @@
     try {
       await local.set({ [SETTING_KEY]: locale });
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

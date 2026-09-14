@@ -32,6 +32,23 @@
     </section>
 
     <section class="popup__row">
+      <label class="popup__row-label" for="salary-filter-toggle" id="salary-filter-label"></label>
+      <label class="switch">
+        <input type="checkbox" id="salary-filter-toggle" role="switch" />
+        <span class="switch__track"><span class="switch__thumb"></span></span>
+      </label>
+    </section>
+
+    <section class="popup__row popup__row--range">
+      <label class="popup__range-field" for="salary-target"><span id="salary-target-label"></span><input id="salary-target" class="popup__range-input" inputmode="numeric" autocomplete="off" /></label>
+      <label class="popup__range-field" for="salary-tolerance"><span id="salary-tolerance-label"></span><input id="salary-tolerance" class="popup__range-input" inputmode="numeric" autocomplete="off" /></label>
+    </section>
+
+    <section class="popup__row popup__row--muted">
+      <span id="salary-filter-hint"></span>
+    </section>
+
+    <section class="popup__row">
       <label class="popup__row-label" for="cache-toggle" id="local-cache-label"></label>
       <label class="switch">
         <input type="checkbox" id="cache-toggle" role="switch" />
@@ -60,6 +77,7 @@
   <script src="../src/cache.js"></script>
   <script src="../src/localization.js"></script>
   <script src="../src/scheduler.js"></script>
+  <script src="../src/salary-filter.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

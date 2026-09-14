@@ -1,6 +1,7 @@
 # LGS-96
 
 Read this in other languages:
+
 - :it: [Italian](README_IT.md)
 
 LGS-96 is an unofficial Chrome extension that shows salary information found in
@@ -14,7 +15,7 @@ ranges to be published in job postings. A generous amount of companies, though, 
 
 ## Features
 
-<img src="readme_pictures/lgs96_cards.png" width="720"> 
+<img src="readme_pictures/lgs96_cards.png" width="720">
 
 - A compact badge on each LinkedIn job card summarizes what the posting contains:
   - :green_circle: green: a narrow salary range,
@@ -22,10 +23,13 @@ ranges to be published in job postings. A generous amount of companies, though, 
   - :red_circle: red: no salary information detected in the posting,
   - :white_circle: grey: the check is pending, or it could not be completed due to errors or exceptions.
 - When a card has no salary text on its own, the extension reads the public job description
-  (rate limited, with backoff) and extracts the salary range from its text, 
+  (rate limited, with backoff) and extracts the salary range from its text,
   with regional currency defaults and support for English and Italian postings.
 - **Request frequency** setting (Slow / Average / Fast) controls the delay between
   requests to avoid being rate-limited on LinkedIn.
+- **Preferred salary:** set an annual target (e.g. `45000` or `45k`) with an
+  adjustable tolerance (default 10%) to keep only matching postings
+  highlighted; other badges are dimmed.
 - **Local cache** of parsed results (3 days, can be disabled and cleared from the popup).
 - **English** and **Italian** interfaces.
 - Hover any badge and use the flag to **report an incorrect result**.
@@ -47,15 +51,18 @@ Download it from [here!](https://chromewebstore.google.com/detail/jlhmooggdapjbl
 
 You can access the extension settings by clicking its icon in the top-right corner:  
 <img src="readme_pictures/lgs96_settings.png" width="200">  
+
 - **Language:** select one of the supported languages. At the moment, only English and Italian are supported. Defaults to English.
 - **Request frequency:** defines the minimum timeout between two consecutive requests to LinkedIn's API to retrieve the job description text. It has no effect on the speed of retrieval from the local cache. Change this to a higher value if you experience rate-limiting. Options are _Slow (2.5 s)_, _Average (1.6 s)_, and _Fast (1 s)_.
-- **Local cache:** to save time, job scanning results of the last 3 days are saved in a local cache. When you see the same card again, the result is fetched from the local storage instead of LinkedIn's API. 
+- **Preferred salary:** enter your preferred annual salary (numbers like `45000` or `45k`) and a tolerance percentage (default 10%). Postings whose detected minimum is no more than the tolerance below your figure stay highlighted; the rest, or postings without detectable salary, are dimmed.
+- **Local cache:** to save time, job scanning results of the last 3 days are saved in a local cache. When you see the same card again, the result is fetched from the local storage instead of LinkedIn's API.
 - **Cloud cache:** a feature I may add in the future. It consists in a centralized cache to which each user of the extension can contribute.
 - **Clear cache:** pressing this button will empty the local cache **without a confirmation dialog.**
 - **Buy me a coffee:** the most important feature in the extension - it sends you to [my Ko-Fi page](https://ko-fi.com/albertocastronovo) :heart:  
 
 Just browse LinkedIn to see the magic happen!  
 The currently supported pages are:  
+
 - [`linkedin.com/jobs/`](https://www.linkedin.com/jobs/) (works on the 1-3 job cards shown at the beginning of the page)
 - [`linkedin.com/search/results/all/`](https://www.linkedin.com/search/results/all/) (works on the _Job offers_ tab)
 
@@ -67,7 +74,7 @@ Se vedi un annuncio che l'estensione non riesce a intepretare correttamente puoi
 
 If you find a job description that the extension fails to read correctly, you can report it to me by hovering over the colored badge and clicking on the flag on the left. In the popup that opens, you can write the information that the extension should have shown.
 
-<img src="readme_pictures/lgs96_form.png" width="300"> 
+<img src="readme_pictures/lgs96_form.png" width="300">
 
 ## Privacy
 

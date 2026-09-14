@@ -35,6 +35,18 @@
   "popup_request_frequency_hint": {
     "message": "Scegli un ritmo più lento se i controlli falliscono o le card restano bloccate."
   },
+  "popup_salary_filter_label": {
+    "message": "RAL desiderata"
+  },
+  "popup_salary_filter_hint": {
+    "message": "Gli annunci entro la tolleranza restano evidenziati."
+  },
+  "popup_salary_filter_target": {
+    "message": "RAL annua"
+  },
+  "popup_salary_filter_tolerance": {
+    "message": "Tolleranza %"
+  },
   "popup_local_cache": {
     "message": "Cache locale"
   },

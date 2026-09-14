@@ -1,11 +1,12 @@
 (() => {
   "use strict";
 
-  const RESULT_CARD_SELECTOR = '[role="button"][componentkey^="job-card-component-ref-"]';
+  const RESULT_CARD_SELECTOR =
+    '[role="button"][componentkey^="job-card-component-ref-"]';
   const HOME_CARD_SELECTOR =
     '[data-testid="JobsHomeFeedModuleListCollection"] a[href*="currentJobId="]';
   const VOYAGER_CARD_SELECTOR =
-    'li[data-occludable-job-id] .job-card-container[data-job-id], .scaffold-layout__list-item .job-card-container[data-job-id]';
+    "li[data-occludable-job-id] .job-card-container[data-job-id], .scaffold-layout__list-item .job-card-container[data-job-id]";
   const BLENDED_SEARCH_CARD_SELECTOR =
     'a[href*="/jobs/search-results/"][href*="currentJobId="]';
   const BADGE_CLASS = "lgs96-badge";
@@ -19,6 +20,8 @@
   const STATE_NARROW = "lgs96-badge--narrow";
   const STATE_BROAD = "lgs96-badge--broad";
   const STATE_ERROR = "lgs96-badge--error";
+  const MATCH_CLASS = "lgs96-badge--match";
+  const DIMMED_CLASS = "lgs96-badge--dimmed";
 
   const LOADING_TEXT_KEY = "badge_loading";
   const NO_SALARY_TEXT_KEY = "badge_none";
@@ -28,8 +31,8 @@
 
   const PRIVACY_POLICY_URL =
     "https://github.com/albertocastronovo/lgs-96/blob/main/PRIVACY.md";
-  const FLAG_SVG =
-    '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg>';
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const FLAG_PATH_D = "M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z";
 
   const SCAN_DEBOUNCE_MS = 150;
   const POLL_INTERVAL_MS = 500;
@@ -42,15 +45,31 @@
   const QUEUED_FLAG = "lgs96Queued";
   const LGS96_DEBUG = false;
 
-  const JOB_POSTING_ENDPOINT = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/";
+  const JOB_POSTING_ENDPOINT =
+    "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/";
   const DESCRIPTION_SELECTOR = ".show-more-less-html__markup";
   const SESSION_FETCH_BUDGET = 80;
   const MAX_CONSECUTIVE_RATE_LIMITS = 3;
   const MAX_DESCRIPTION_BYTES = 1000000;
 
   const BLOCK_TAGS = new Set([
-    "P", "DIV", "LI", "UL", "OL", "H1", "H2", "H3", "H4", "H5", "H6",
-    "TABLE", "TR", "SECTION", "ARTICLE", "HEADER", "FOOTER",
+    "P",
+    "DIV",
+    "LI",
+    "UL",
+    "OL",
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "TABLE",
+    "TR",
+    "SECTION",
+    "ARTICLE",
+    "HEADER",
+    "FOOTER",
   ]);
 
   const SEPARATOR_FIELD_RE = /^[·•.|\s\-\u2010-\u2015\u2212]+$/;
@@ -76,15 +95,22 @@
   let localizationState = null;
   let feedbackUi = null;
   let gratitudeUi = null;
+  let salaryTargetState = {
+    enabled: false,
+    target: null,
+    tolerance: 10,
+  };
 
   function loc(key, params) {
     const localization = globalThis.LgsLocalization;
     if (!localization) return "";
     return localization.textFromCatalogs(
       localizationState ? localizationState.catalogs : null,
-      localizationState ? localizationState.language : localization.DEFAULT_LOCALE,
+      localizationState
+        ? localizationState.language
+        : localization.DEFAULT_LOCALE,
       key,
-      params
+      params,
     );
   }
 
@@ -152,7 +178,9 @@
   }
 
   function getCardMetadata(fields) {
-    const meaningful = fields.filter((field) => !SEPARATOR_FIELD_RE.test(field));
+    const meaningful = fields.filter(
+      (field) => !SEPARATOR_FIELD_RE.test(field),
+    );
     return { locationText: meaningful[2] || "" };
   }
 
@@ -207,16 +235,22 @@
     const jobId = (card.getAttribute("data-job-id") || "").trim();
     if (!/^\d+$/.test(jobId)) return null;
 
-    const titleLink = card.querySelector('.job-card-list__title--link[href*="/jobs/view/"]');
+    const titleLink = card.querySelector(
+      '.job-card-list__title--link[href*="/jobs/view/"]',
+    );
     if (!titleLink) return null;
 
     const routes = getRoutes();
     const titleLinkId = routes
-      ? routes.extractJobIdFromHref(titleLink.getAttribute("href"), location.href)
+      ? routes.extractJobIdFromHref(
+          titleLink.getAttribute("href"),
+          location.href,
+        )
       : null;
     if (titleLinkId && titleLinkId !== jobId) return null;
 
-    const titleWrapper = titleLink.closest(".artdeco-entity-lockup__title") || titleLink;
+    const titleWrapper =
+      titleLink.closest(".artdeco-entity-lockup__title") || titleLink;
     if (!titleWrapper) return null;
 
     const locationText =
@@ -301,10 +335,18 @@
 
   function collectCandidates() {
     const candidates = new Set();
-    document.querySelectorAll(RESULT_CARD_SELECTOR).forEach((card) => candidates.add(card));
-    document.querySelectorAll(HOME_CARD_SELECTOR).forEach((card) => candidates.add(card));
-    document.querySelectorAll(VOYAGER_CARD_SELECTOR).forEach((card) => candidates.add(card));
-    document.querySelectorAll(BLENDED_SEARCH_CARD_SELECTOR).forEach((card) => candidates.add(card));
+    document
+      .querySelectorAll(RESULT_CARD_SELECTOR)
+      .forEach((card) => candidates.add(card));
+    document
+      .querySelectorAll(HOME_CARD_SELECTOR)
+      .forEach((card) => candidates.add(card));
+    document
+      .querySelectorAll(VOYAGER_CARD_SELECTOR)
+      .forEach((card) => candidates.add(card));
+    document
+      .querySelectorAll(BLENDED_SEARCH_CARD_SELECTOR)
+      .forEach((card) => candidates.add(card));
     return candidates;
   }
 
@@ -314,7 +356,9 @@
     candidates.forEach(safeInjectBadge);
     if (LGS96_DEBUG) {
       const badges = document.querySelectorAll(`.${BADGE_CLASS}`).length;
-      console.debug(`[LGS-96] scan: ${candidates.size} candidates, ${badges} badges`);
+      console.debug(
+        `[LGS-96] scan: ${candidates.size} candidates, ${badges} badges`,
+      );
     }
   }
 
@@ -340,7 +384,9 @@
     }
     for (const controller of pendingFetchControllers) controller.abort();
     pendingFetchControllers.clear();
-    const selector = removeAllBadges ? `.${BADGE_CLASS}` : `.${BADGE_CLASS}.${STATE_LOADING}`;
+    const selector = removeAllBadges
+      ? `.${BADGE_CLASS}`
+      : `.${BADGE_CLASS}.${STATE_LOADING}`;
     document.querySelectorAll(selector).forEach((badge) => badge.remove());
   }
 
@@ -373,7 +419,10 @@
   function start() {
     reconcileRoute();
     observer = new MutationObserver(onDomChanged);
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
     window.addEventListener("popstate", reconcileRoute);
     window.addEventListener("hashchange", reconcileRoute);
     pollTimer = setInterval(onPollTick, POLL_INTERVAL_MS);
@@ -394,7 +443,11 @@
         return;
       }
       badge.dataset[QUEUED_FLAG] = "true";
-      const created = { badges: new Set([badge]), defaultCurrency, stage: "local" };
+      const created = {
+        badges: new Set([badge]),
+        defaultCurrency,
+        stage: "local",
+      };
       pendingChecks.set(jobId, created);
       startLocalStage(jobId, created);
       return;
@@ -418,7 +471,7 @@
             pending,
             entry.result,
             entry.displayText || undefined,
-            entry.source || "local-cache"
+            entry.source || "local-cache",
           );
           return;
         }
@@ -433,13 +486,17 @@
   function enqueueLinkedInStage(jobId, pending) {
     if (pendingChecks.get(jobId) !== pending) return;
     pending.stage = "linkedin";
-    taskQueue.push({ badge: null, jobId, defaultCurrency: pending.defaultCurrency });
+    taskQueue.push({
+      badge: null,
+      jobId,
+      defaultCurrency: pending.defaultCurrency,
+    });
     scheduleDispatch();
   }
 
   function applyPendingResult(jobId, pending, info, displayOverride, source) {
     const badges = [...pending.badges].filter(
-      (badge) => badge.isConnected && badge.dataset.lgs96JobId === jobId
+      (badge) => badge.isConnected && badge.dataset.lgs96JobId === jobId,
     );
     if (badges.length === 0) {
       pendingChecks.delete(jobId);
@@ -473,13 +530,29 @@
       pending.badges.add(badge);
       return;
     }
-    if (jobId) pendingChecks.set(jobId, { badges: new Set([badge]), defaultCurrency });
+    if (jobId)
+      pendingChecks.set(jobId, { badges: new Set([badge]), defaultCurrency });
     taskQueue.push({ badge, jobId, defaultCurrency });
     scheduleDispatch();
   }
 
   function getScheduler() {
     return globalThis.LgsScheduler;
+  }
+
+  function getSalaryFilter() {
+    return globalThis.LgsSalaryFilter;
+  }
+
+  function loadSalaryFilter() {
+    const salaryFilter = getSalaryFilter();
+    if (!salaryFilter) return Promise.resolve();
+    return salaryFilter
+      .getSalaryFilter()
+      .then((filter) => {
+        salaryTargetState = filter;
+      })
+      .catch(() => {});
   }
 
   function getDispatchDelayMs() {
@@ -505,10 +578,11 @@
             if (!jobId) continue;
             if (entry.isIntersecting) visibleJobIds.add(jobId);
             else visibleJobIds.delete(jobId);
-            if (!entry.target.isConnected) visibilityObserver.unobserve(entry.target);
+            if (!entry.target.isConnected)
+              visibilityObserver.unobserve(entry.target);
           }
         },
-        { rootMargin: "200px 0px" }
+        { rootMargin: "200px 0px" },
       );
     }
     visibilityObserver.observe(badge);
@@ -561,7 +635,7 @@
     return badges.filter(
       (badge) =>
         badge.isConnected &&
-        (!task.jobId || badge.dataset.lgs96JobId === task.jobId)
+        (!task.jobId || badge.dataset.lgs96JobId === task.jobId),
     );
   }
 
@@ -587,13 +661,17 @@
     checkSalaryForJob(task.jobId, task.defaultCurrency)
       .then(async (info) => {
         const cache = globalThis.LgsCache;
-        if (cache) await cache.saveCachedResult(task.jobId, info, null, "description").catch(() => {});
+        if (cache)
+          await cache
+            .saveCachedResult(task.jobId, info, null, "description")
+            .catch(() => {});
         for (const badge of pendingBadges(pending, task)) {
           applySalaryInfo(badge, info, undefined, "description");
         }
       })
       .catch(() => {
-        for (const badge of pendingBadges(pending, task)) applyCheckError(badge);
+        for (const badge of pendingBadges(pending, task))
+          applyCheckError(badge);
       })
       .finally(() => {
         if (task.jobId) pendingChecks.delete(task.jobId);
@@ -653,15 +731,17 @@
       .then((response) => {
         if (response.status === 429 || response.status === 999) {
           consecutiveRateLimits++;
-          if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) sessionHalted = true;
+          if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS)
+            sessionHalted = true;
           const scheduler = getScheduler();
           const retryAfter =
             response.status === 429 && scheduler
               ? scheduler.parseRetryAfter(response.headers.get("retry-after"))
               : Number(response.headers.get("retry-after")) * 1000;
-          const backoffMs = Number.isFinite(retryAfter) && retryAfter > 0
-            ? Math.min(retryAfter, MAX_BACKOFF_MS)
-            : DEFAULT_BACKOFF_MS;
+          const backoffMs =
+            Number.isFinite(retryAfter) && retryAfter > 0
+              ? Math.min(retryAfter, MAX_BACKOFF_MS)
+              : DEFAULT_BACKOFF_MS;
           increaseBackoff(backoffMs);
           throw new Error("rate limited");
         }
@@ -672,7 +752,10 @@
           throw new Error(`unexpected content type: ${contentType}`);
         }
         const contentLength = Number(response.headers.get("content-length"));
-        if (Number.isFinite(contentLength) && contentLength > MAX_DESCRIPTION_BYTES) {
+        if (
+          Number.isFinite(contentLength) &&
+          contentLength > MAX_DESCRIPTION_BYTES
+        ) {
           throw new Error("description too large");
         }
         return response.text();
@@ -698,8 +781,24 @@
 
   function checkSalaryForJob(jobId, defaultCurrency) {
     return fetchJobDescription(jobId).then((descriptionText) =>
-      findSalaryInfo(descriptionText, { defaultCurrency, allowBareRange: true })
+      findSalaryInfo(descriptionText, {
+        defaultCurrency,
+        allowBareRange: true,
+      }),
     );
+  }
+
+  function createFlagIcon() {
+    const svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "12");
+    svg.setAttribute("height", "12");
+    svg.setAttribute("fill", "currentColor");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", FLAG_PATH_D);
+    svg.append(path);
+    return svg;
   }
 
   function createFlag() {
@@ -708,7 +807,7 @@
     flag.setAttribute("role", "button");
     flag.setAttribute("tabindex", "0");
     flag.setAttribute("aria-label", loc(REPORT_ACTION_KEY));
-    flag.innerHTML = FLAG_SVG;
+    flag.appendChild(createFlagIcon());
     flag.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -737,6 +836,35 @@
   function setBadgeText(badge, text) {
     const label = badge.querySelector(`.${LABEL_CLASS}`);
     if (label) label.textContent = text;
+  }
+
+  function readBadgeInfo(badge) {
+    try {
+      const raw = badge.dataset.lgs96Info || "";
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function applyTargetHighlight(badge, info) {
+    const salaryFilter = getSalaryFilter();
+    const active = salaryFilter
+      ? salaryFilter.isActive(salaryTargetState)
+      : false;
+    badge.classList.remove(MATCH_CLASS, DIMMED_CLASS);
+    badge.dataset.lgs96TargetMatch = "";
+    if (!active) return;
+    const matched = salaryFilter.matchesSalary(info, salaryTargetState);
+    badge.classList.add(matched ? MATCH_CLASS : DIMMED_CLASS);
+    badge.dataset.lgs96TargetMatch = matched ? "true" : "false";
+  }
+
+  function refreshTargetHighlight() {
+    document.querySelectorAll(`.${BADGE_CLASS}`).forEach((badge) => {
+      applyTargetHighlight(badge, readBadgeInfo(badge));
+    });
   }
 
   function applySalaryInfo(badge, info, displayOverride, source) {
@@ -772,6 +900,7 @@
     badge.dataset.lgs96Source = source || "unknown";
     badge.dataset.lgs96Info =
       info && info.kind !== "none" ? JSON.stringify(info) : "";
+    applyTargetHighlight(badge, info && info.kind !== "none" ? info : null);
 
     swapSpinnerForLight(badge);
     setBadgeText(badge, labelText);
@@ -785,6 +914,7 @@
     badge.dataset.lgs96State = "error";
     badge.dataset.lgs96Source = "error";
     badge.dataset.lgs96Info = "";
+    applyTargetHighlight(badge, null);
 
     swapSpinnerForLight(badge);
     setBadgeText(badge, loc(ERROR_TEXT_KEY));
@@ -792,10 +922,14 @@
 
   function extensionVersion() {
     try {
-      if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.runtime &&
+        chrome.runtime.getManifest
+      ) {
         return String(chrome.runtime.getManifest().version || "");
       }
-    } catch (error) {
+    } catch {
       /* manifest unavailable */
     }
     return "";
@@ -813,7 +947,7 @@
     } else if (state && state !== "none" && state !== "loading") {
       try {
         kind = JSON.parse(badge.dataset.lgs96Info || "{}").kind || "single";
-      } catch (error) {
+      } catch {
         kind = "single";
       }
     }
@@ -914,11 +1048,13 @@
 
     const cancelButton = document.createElement("button");
     cancelButton.type = "button";
-    cancelButton.className = "lgs96-feedback__button lgs96-feedback__button--secondary";
+    cancelButton.className =
+      "lgs96-feedback__button lgs96-feedback__button--secondary";
 
     const submitButton = document.createElement("button");
     submitButton.type = "button";
-    submitButton.className = "lgs96-feedback__button lgs96-feedback__button--primary";
+    submitButton.className =
+      "lgs96-feedback__button lgs96-feedback__button--primary";
 
     buttonsRow.append(cancelButton, submitButton);
     formView.append(
@@ -926,7 +1062,7 @@
       correctionField,
       disclosure,
       errorLine,
-      buttonsRow
+      buttonsRow,
     );
 
     dialog.append(title, description, formView);
@@ -1010,7 +1146,8 @@
 
     const closeButton = document.createElement("button");
     closeButton.type = "button";
-    closeButton.className = "lgs96-feedback__button lgs96-feedback__button--primary";
+    closeButton.className =
+      "lgs96-feedback__button lgs96-feedback__button--primary";
 
     const buttonsRow = document.createElement("div");
     buttonsRow.className = "lgs96-feedback__buttons";
@@ -1035,7 +1172,14 @@
       focusables[0].focus();
     });
 
-    gratitudeUi = { backdrop, dialog, title, message, closeButton, lastFocus: null };
+    gratitudeUi = {
+      backdrop,
+      dialog,
+      title,
+      message,
+      closeButton,
+      lastFocus: null,
+    };
     return gratitudeUi;
   }
 
@@ -1110,7 +1254,8 @@
     const ui = feedbackUi;
     if (!ui || ui.submitting || ui.backdrop.hidden) return;
     const expectedType = ui.select.value;
-    const expectedValue = expectedType === "none" ? "" : ui.textarea.value.trim();
+    const expectedValue =
+      expectedType === "none" ? "" : ui.textarea.value.trim();
     if (expectedType !== "none" && expectedValue.length === 0) {
       ui.errorLine.textContent = loc("feedback_correction_required");
       return;
@@ -1177,12 +1322,14 @@
   function fetchLocalizationState() {
     const localization = globalThis.LgsLocalization;
     if (!localization) return Promise.resolve(null);
-    return sendRuntimeMessage({ type: localization.MSG_TYPE }).then((response) => {
-      if (response && response.ok && response.catalogs) {
-        return { catalogs: response.catalogs, language: response.language };
-      }
-      return null;
-    });
+    return sendRuntimeMessage({ type: localization.MSG_TYPE }).then(
+      (response) => {
+        if (response && response.ok && response.catalogs) {
+          return { catalogs: response.catalogs, language: response.language };
+        }
+        return null;
+      },
+    );
   }
 
   function relabelBadges() {
@@ -1198,7 +1345,9 @@
       if (flag) {
         flag.setAttribute(
           "aria-label",
-          loc(flag.dataset.reported === "true" ? REPORTED_KEY : REPORT_ACTION_KEY)
+          loc(
+            flag.dataset.reported === "true" ? REPORTED_KEY : REPORT_ACTION_KEY,
+          ),
         );
       }
     });
@@ -1231,9 +1380,28 @@
     return scheduler
       .getRequestIntervalMs()
       .then((intervalMs) => {
-        if (Number.isFinite(intervalMs) && intervalMs > 0) dispatchBaseMs = intervalMs;
+        if (Number.isFinite(intervalMs) && intervalMs > 0)
+          dispatchBaseMs = intervalMs;
       })
       .catch(() => {});
+  }
+
+  function watchFilterChanges() {
+    const salaryFilter = getSalaryFilter();
+    if (
+      !salaryFilter ||
+      typeof chrome === "undefined" ||
+      !chrome.storage ||
+      !chrome.storage.onChanged
+    ) {
+      return;
+    }
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes[salaryFilter.SETTING_KEY]) return;
+      loadSalaryFilter()
+        .then(() => refreshTargetHighlight())
+        .catch(() => {});
+    });
   }
 
   function watchFrequencyChanges() {
@@ -1259,10 +1427,12 @@
       })
       .catch(() => {})
       .then(() => loadDispatchInterval())
+      .then(() => loadSalaryFilter())
       .then(() => {
         start();
         watchLanguageChanges();
         watchFrequencyChanges();
+        watchFilterChanges();
       });
   }
 

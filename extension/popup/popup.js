@@ -1,9 +1,8 @@
 (() => {
-  "use strict";
-
   const cache = globalThis.LgsCache;
   const localization = globalThis.LgsLocalization;
   const scheduler = globalThis.LgsScheduler;
+  const salaryFilter = globalThis.LgsSalaryFilter;
 
   const brand = document.getElementById("popup-brand");
   const subtitle = document.getElementById("popup-subtitle");
@@ -15,6 +14,15 @@
   const frequencyLabel = document.getElementById("request-frequency-label");
   const frequencySelect = document.getElementById("request-frequency-select");
   const frequencyHint = document.getElementById("request-frequency-hint");
+  const filterLabel = document.getElementById("salary-filter-label");
+  const filterToggle = document.getElementById("salary-filter-toggle");
+  const salaryTargetLabel = document.getElementById("salary-target-label");
+  const salaryToleranceLabel = document.getElementById(
+    "salary-tolerance-label",
+  );
+  const salaryTargetInput = document.getElementById("salary-target");
+  const salaryToleranceInput = document.getElementById("salary-tolerance");
+  const filterHint = document.getElementById("salary-filter-hint");
   const localCacheLabel = document.getElementById("local-cache-label");
   const cloudCacheText = document.getElementById("cloud-cache-text");
   const cloudPreview = document.getElementById("cloud-preview");
@@ -33,7 +41,7 @@
           const error = chrome.runtime.lastError;
           resolve(error ? null : response || null);
         });
-      } catch (error) {
+      } catch {
         resolve(null);
       }
     });
@@ -64,7 +72,8 @@
       const option = document.createElement("option");
       option.value = locale;
       option.textContent =
-        localization.textFromCatalogs(catalogs, locale, "language_name") || locale;
+        localization.textFromCatalogs(catalogs, locale, "language_name") ||
+        locale;
       languageSelect.appendChild(option);
     }
     languageSelect.value = language;
@@ -94,6 +103,47 @@
     frequencySelect.disabled = false;
   }
 
+  function filterFieldText(value) {
+    return value === null || value === undefined ? "" : String(value);
+  }
+
+  async function renderSalaryFilter() {
+    filterLabel.textContent = t("popup_salary_filter_label");
+    filterHint.textContent = t("popup_salary_filter_hint");
+    salaryTargetLabel.textContent = t("popup_salary_filter_target");
+    salaryToleranceLabel.textContent = t("popup_salary_filter_tolerance");
+    if (!salaryFilter) {
+      filterToggle.disabled = true;
+      salaryTargetInput.disabled = true;
+      salaryToleranceInput.disabled = true;
+      return;
+    }
+    const current = await salaryFilter.getSalaryFilter();
+    filterToggle.checked = current.enabled;
+    salaryTargetInput.value = filterFieldText(current.target);
+    salaryToleranceInput.value = filterFieldText(current.tolerance);
+  }
+
+  async function saveSalaryFilter() {
+    if (!salaryFilter) return;
+    await salaryFilter.setSalaryFilter({
+      enabled: filterToggle.checked,
+      target: salaryTargetInput.value,
+      tolerance: salaryToleranceInput.value,
+    });
+    const current = await salaryFilter.getSalaryFilter();
+    filterToggle.checked = current.enabled;
+    salaryTargetInput.value = filterFieldText(current.target);
+    salaryToleranceInput.value = filterFieldText(current.tolerance);
+  }
+
+  function onTargetInput() {
+    if (!filterToggle.checked && salaryTargetInput.value.trim() !== "") {
+      filterToggle.checked = true;
+    }
+    saveSalaryFilter();
+  }
+
   async function refreshCount() {
     if (!cache) {
       countLabel.textContent = t("popup_cache_unavailable");
@@ -116,6 +166,7 @@
     languageLabel.textContent = t("popup_language_label");
     renderLanguageOptions();
     await renderFrequencyOptions();
+    await renderSalaryFilter();
     localCacheLabel.textContent = t("popup_local_cache");
     cloudCacheText.textContent = t("popup_cloud_cache");
     cloudPreview.textContent = t("popup_cloud_coming_soon");
@@ -133,10 +184,7 @@
     await loadState();
     await render();
 
-    if (!cache) {
-      toggle.disabled = true;
-      clearButton.disabled = true;
-    } else {
+    if (cache) {
       toggle.checked = await cache.getCacheEnabled();
       toggle.addEventListener("change", async () => {
         await cache.setCacheEnabled(toggle.checked);
@@ -148,6 +196,9 @@
         await refreshCount();
         clearButton.disabled = false;
       });
+    } else {
+      toggle.disabled = true;
+      clearButton.disabled = true;
     }
 
     languageSelect.addEventListener("change", async () => {
@@ -160,6 +211,10 @@
       if (!scheduler) return;
       await scheduler.setRequestFrequency(frequencySelect.value);
     });
+
+    filterToggle.addEventListener("change", saveSalaryFilter);
+    salaryTargetInput.addEventListener("change", onTargetInput);
+    salaryToleranceInput.addEventListener("change", saveSalaryFilter);
   }
 
   init();
