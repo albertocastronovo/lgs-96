@@ -23,8 +23,12 @@ jobs:
           tests/localization.test.js tests/routes.test.js
           tests/fixture-cards.test.js tests/fixtures-sanitized.test.js
           tests/cloud-cache.test.js
-      - name: Build release package
+      - name: Check Firefox manifest is in sync
+        run: node scripts/build-firefox-manifest.js --check
+      - name: Build release package (Chrome)
         run: node scripts/package.js
+      - name: Build release package (Firefox)
+        run: node scripts/package.js --target=firefox
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:

@@ -1,6 +1,11 @@
 "use strict";
 
-importScripts("localization.js", "feedback.js");
+// Firefox MV3 backgrounds run as a plain event page script, not a worker:
+// importScripts() doesn't exist there. On Firefox, manifest.firefox.json lists
+// compat.js/localization.js/feedback.js directly in background.scripts instead.
+if (typeof importScripts === "function") {
+  importScripts("compat.js", "localization.js", "feedback.js");
+}
 
 const localizationModule = globalThis.LgsLocalization;
 const feedbackModule = globalThis.LgsFeedback;
