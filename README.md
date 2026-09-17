@@ -63,8 +63,6 @@ The currently supported pages are:
 
 - [`linkedin.com/jobs/collections/recommended`](https://www.linkedin.com/jobs/collections/recommended)
 
-Se vedi un annuncio che l'estensione non riesce a intepretare correttamente puoi segnalarmelo passando il mouse sopra il badge colorato e cliccando sulla bandiera a sinistra. Si aprirà un popup che ti chiederà di inserire i valori che ti saresti aspettato di vedere.
-
 If you find a job description that the extension fails to read correctly, you can report it to me by hovering over the colored badge and clicking on the flag on the left. In the popup that opens, you can write the information that the extension should have shown.
 
 <img src="readme_pictures/lgs96_form.png" width="300"> 
