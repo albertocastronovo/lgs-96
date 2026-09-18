@@ -41,6 +41,7 @@
         "src/localization.js",
         "src/feedback.js",
         "src/scheduler.js",
+        "src/salary-filter.js",
         "src/content.js"
       ],
       "css": ["src/content.css"],

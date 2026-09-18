@@ -1,6 +1,7 @@
 # LGS-96
 
 Leggi in altre lingue:
+
 - :us: [English](README.md)
 
 LGS-96 è un'estensione di Chrome che mostra le informazioni sulla RAL trovate nella descrizione degli annunci di LinkedIn
@@ -13,7 +14,7 @@ obbligherebbe le aziende a indicare i range retributivi negli annunci di lavoro 
 
 ## Caratteristiche
 
-<img src="readme_pictures/lgs96_cards.png" width="720"> 
+<img src="readme_pictures/lgs96_cards.png" width="720">
 
 - Un badge colorato su ogni card mostra le informazioni sulla retribuzione nel testo dell'inserzione:
   - :green_circle: verde: un intervallo di RAL ragionevolmente contenuto;
@@ -23,6 +24,7 @@ obbligherebbe le aziende a indicare i range retributivi negli annunci di lavoro 
 - L'estensione verifica se la card contiene già informazioni sull'intervallo di retribuzione; se non le contiene,
   manda una richiesta alle API di LinkedIn e legge la descrizione completa dell'inserzione (con controlli per evitare il rate-limit del sito), estraendone l'intervallo retributivo, con una valuta predefinita in base alla regione dell'utente e supporto per inserzioni in italiano e inglese;
 - Controllo della frequenza massima delle richieste al sito (Lenta / Media / Veloce) dalle impostazioni dell'estensione per evitare il rate-limit di LinkedIn;
+- **RAL desiderata:** imposta una RAL annua (es. `45000` o `45k`) con una tolleranza regolabile (predefinita 10%) per evidenziare solo le inserzioni il cui minimo non è inferiore alla tolleranza; gli altri badge vengono attenuati;
 - **Cache locale** dei risultati (fino a 3 giorni; può essere disattivata e/o svuotata dalle impostazioni);
 - interfaccia in **italiano** e **inglese**;
 - clicca sulla bandiera sul badge colorato per **Segnalare un risultato errato**.
@@ -44,8 +46,10 @@ Scarica l'estensione [qui!](https://chromewebstore.google.com/detail/jlhmooggdap
 
 Cliccando l'icona dell'estensione in alto a destra, puoi accedere alle sue impostazioni:  
 <img src="readme_pictures/lgs96_settings.png" width="200">  
+
 - **Lingua:** seleziona una delle lingue supportate. Al momento, sono presenti italiano e inglese. Il valore predefinito è inglese;
-- **Frequenza richieste:** definisce il timeout minimo tra due richieste consecutive alle API di linkedIn. Non ha effetto sulla velocità con cui i risultati vengono presi dalla cache locale. Si raccomanda di passare a un tempo superiore se si arriva al rate-limiting di LinkedIn. Le opzioni sono _Lenta (2.5 s)_, _Media (1.6 s)_ e _Veloce (1 s)_; 
+- **Frequenza richieste:** definisce il timeout minimo tra due richieste consecutive alle API di linkedIn. Non ha effetto sulla velocità con cui i risultati vengono presi dalla cache locale. Si raccomanda di passare a un tempo superiore se si arriva al rate-limiting di LinkedIn. Le opzioni sono _Lenta (2.5 s)_, _Media (1.6 s)_ e _Veloce (1 s)_;
+- **RAL desiderata:** inserisci la RAL annua che preferisci (numeri come `45000` o `45k`) e una tolleranza percentuale (predefinita 10%). Le inserzioni il cui minimo rilevato non è più basso della tolleranza restano evidenziate; le altre, o quelle senza retribuzione rilevabile, vengono attenuate;
 - **Cache locale:** per risparmiare tempo, i risultati degli ultimi 3 giorni vengono salvati in una cache locale. Quando visualizzi nuovamente lo stesso annuncio di lavoro, le sue informazioni vengono ottenute dalla memoria deo browser anziché dalle API di LinkedIn;
 - **Cache cloud:** una possibile funzionalità futura, che consiste in una cache centralizzata a cui contribuiscono tutti gli utenti dell'estensione;
 - **Pulisci cache:** questo pulsante svuota completamente la cache locale **senza chiedere conferma;**
@@ -53,6 +57,7 @@ Cliccando l'icona dell'estensione in alto a destra, puoi accedere alle sue impos
 
 Una volta configurata, apri semplicemente LinkedIn e la vedrai funzionare!  
 Le pagine attualmente supportate sono:
+
 - [`linkedin.com/jobs/`](https://www.linkedin.com/jobs/) (funziona sulle 1-3 card all'inizio della pagina)
 - [`linkedin.com/search/results/all/`](https://www.linkedin.com/search/results/all/) (funziona nella sezione _Offerte di lavoro_)
 
@@ -62,7 +67,7 @@ Le pagine attualmente supportate sono:
 
 Se vedi un annuncio che l'estensione non riesce a intepretare correttamente puoi segnalarmelo passando il mouse sopra il badge colorato e cliccando sulla bandiera a sinistra. Si aprirà un popup che ti chiederà di inserire i valori che ti saresti aspettato di vedere.
 
-<img src="readme_pictures/lgs96_form.png" width="300"> 
+<img src="readme_pictures/lgs96_form.png" width="300">
 
 ## Privacy
 
@@ -81,11 +86,11 @@ node --test tests/salary-parser.test.js tests/cache.test.js tests/scheduler.test
 ```
 
 Di seguito sono elencati alcuni script accessori:
+
 - `node scripts/generate-locales.js` — scrive i file in `extension/_locales/` a partire dai file YAML di localizzazione in `extension/localization/`.
 - `node scripts/sanitize-fixtures.js` — esegue un parsing delle pagine HTML in `pages/` per renderle completamente anonime
   (toglie nomi di script, informazioni personali e di contatto).
 - `node scripts/package.js` — crea lo ZIP dell'estensione nella cartella `dist/` e ne stampa l'hash.
-
 
 ### Lingue
 

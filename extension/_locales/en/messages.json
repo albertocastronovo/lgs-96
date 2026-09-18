@@ -35,6 +35,18 @@
   "popup_request_frequency_hint": {
     "message": "Choose a slower pace if salary checks fail or cards seem stuck."
   },
+  "popup_salary_filter_label": {
+    "message": "Preferred salary"
+  },
+  "popup_salary_filter_hint": {
+    "message": "Jobs within tolerance stay highlighted."
+  },
+  "popup_salary_filter_target": {
+    "message": "Annual target"
+  },
+  "popup_salary_filter_tolerance": {
+    "message": "Tolerance %"
+  },
   "popup_local_cache": {
     "message": "Local cache"
   },
