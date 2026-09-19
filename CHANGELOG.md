@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.2 — 2026-09-19
+
+### Added
+- Firefox support: the extension is now packaged for Mozilla Add-ons through a
+  generated cross-browser manifest (contribution by @davidetarsi).
+- Parser: amounts with cents are recognized in both Italian ("47.101,94",
+  "29.000,00€") and US ("28,800.00") formats; cents are rounded to the nearest
+  hundred.
+- Parser: Swiss apostrophe thousands ("45'000"), stray spaces inside amounts
+  ("67 .000"), and currency symbols before the k suffix ("53€K").
+- Parser: compact k-ranges where only the last bound carries the suffix
+  ("60-70k", "35-55K"), with "Range economico" recognized as a salary label.
+- Parser: predictable recruiter typos that omit the thousands ("25,00 €/yr",
+  "€26,00 and €28,00") are corrected to 25,000 / 26,000-28,000 when the salary
+  context is unambiguous.
+
+### Fixed
+- Parser: "mensilità" (payment installments) no longer suppresses an annual
+  range stated on the same line; ranges about client assets ("AUM") are no
+  longer mistaken for salaries.
+- Cached results from older parser versions are invalidated so improved
+  parsing applies immediately.
+
 ## 1.0.1 — 2026-09-12
 
 ### Fixed

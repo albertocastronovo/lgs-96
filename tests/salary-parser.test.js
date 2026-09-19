@@ -389,3 +389,168 @@ test("card non-annual salary is ignored", () => {
     null
   );
 });
+
+test("US cents format range is recognized", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "The typical base pay range for this role across Italy is € 28,800.00 - € 38,200.00 per year.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.equal(info.currency, "EUR");
+  assert.deepEqual(toComparable(info), [28800, 38200]);
+});
+
+test("cents are rounded to the nearest hundred", () => {
+  const us = SalaryParser.findSalaryInfo(
+    "Annual Base Salary Range: 25,666.67 - 47,666.67 Euro",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(us), [25700, 47700]);
+
+  const italian = SalaryParser.findSalaryInfo(
+    "Inquadramento e retribuzione range RAL € 25.731,81 – 26.843,44",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(italian), [25700, 26800]);
+
+  const single = SalaryParser.findSalaryInfo("Salary: €25,666.67 per year", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(single), [25700]);
+});
+
+test("Italian cents format range is recognized", () => {
+  const glued = SalaryParser.findSalaryInfo("RAL: range retributivo 29.000,00€ – 32.000,00€", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(glued), [29000, 32000]);
+
+  const prefixed = SalaryParser.findSalaryInfo(
+    "La retribuzione prevista per questa posizione è compresa tra EUR 22.000,00 e EUR 25.000,00 lordi annui.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(prefixed), [22000, 25000]);
+});
+
+test("space before the thousands separator is tolerated", () => {
+  const info = SalaryParser.findSalaryInfo("Annual Gross Salary: 67 .000 Eur – 100.000 Eur", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), [67000, 100000]);
+});
+
+test("Swiss apostrophe thousands are recognized", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Attractive packages - the salary band we have for this position is of 45'000-50'000 € (Gross Annual Salary)",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), [45000, 50000]);
+});
+
+test("currency symbol before the k suffix is recognized", () => {
+  const info = SalaryParser.findSalaryInfo("RAL: €47K - 53€K + Ticket, welfare", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), [47000, 53000]);
+});
+
+test("shared k-suffix range parses both bounds", () => {
+  const info = SalaryParser.findSalaryInfo("Salary: 60-70k (depending on experience)", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), [60000, 70000]);
+
+  const ral = SalaryParser.findSalaryInfo("CCNL Metalmeccanica industria - RAL 35-37K;", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(ral), [35000, 37000]);
+});
+
+test("economic range label provides bare-range context", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Inquadramento a tempo indeterminato, CCNL Commercio;\nRange economico: 35-55K",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), [35000, 55000]);
+});
+
+test("client asset ranges are not salaries", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "Administrează relația cu clienții persoane fizice care îndeplinesc condițiile de încadrare în segmentul Premium Invest (AUM între 60k – 250k EUR)",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), []);
+
+  const english = SalaryParser.findSalaryInfo(
+    "Manage high-net-worth clients with assets under management between 60k and 250k EUR.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(english), []);
+});
+
+test("mensilità installments do not suppress the annual range", () => {
+  const info = SalaryParser.findSalaryInfo(
+    "La corrispondente RAL di base per il contratto a tempo indeterminato è prevista nell'intervallo tra 40.000 e 50.000 €, distribuita su 14 mensilità.",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(info), [40000, 50000]);
+});
+
+test("monthly pay is still rejected", () => {
+  assert.deepEqual(toComparable(SalaryParser.findSalaryInfo("Retribuzione: €2.800 al mese")), []);
+  assert.deepEqual(toComparable(SalaryParser.findSalaryInfo("Retribuzione mensile: €2.800")), []);
+});
+
+test("missing-zero recruiter error is corrected to thousands", () => {
+  const info = SalaryParser.findSalaryInfo("Livello retribuzione di base\n25,00 €/yr - 28,00 €/anno", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(info), [25000, 28000]);
+
+  const prose = SalaryParser.findSalaryInfo("Salary between €26,00 and €28,00.", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(prose), [26000, 28000]);
+});
+
+test("missing-zero correction stays conservative", () => {
+  assert.deepEqual(
+    toComparable(
+      SalaryParser.findSalaryInfo("Pay: €25,00/hour", { defaultCurrency: "EUR", allowBareRange: true })
+    ),
+    []
+  );
+  assert.deepEqual(
+    toComparable(
+      SalaryParser.findSalaryInfo("Salary: 3,500.00 USD monthly", { defaultCurrency: "EUR", allowBareRange: true })
+    ),
+    []
+  );
+  assert.deepEqual(
+    toComparable(
+      SalaryParser.findSalaryInfo("Target Incentive: 5 - 7.50%", { defaultCurrency: "EUR", allowBareRange: true })
+    ),
+    []
+  );
+  assert.deepEqual(
+    toComparable(
+      SalaryParser.findSalaryInfo("RAL 28.000 + 1750 incentivo produttività", {
+        defaultCurrency: "EUR",
+        allowBareRange: true,
+      })
+    ),
+    [28000]
+  );
+});
+
+test("compact annual card notation with zero cents", () => {
+  const parsed = SalaryParser.parseCardSalaryText("€26,00/yr - €28,00/yr", { defaultCurrency: "EUR" });
+  assert.deepEqual(toComparable(parsed.info), [26000, 28000]);
+});

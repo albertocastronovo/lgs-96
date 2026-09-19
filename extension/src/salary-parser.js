@@ -83,15 +83,19 @@
 
   const CUR_SRC = `(?:${SYMBOL_ALTS}|\\b(?:${WORD_ALTS})(?![A-Za-z]))`;
   const NUM_SRC =
-    "(?:\\d{1,3}(?:[.,]\\d{1,2})?\\s*[kK]|\\d{1,3}(?:[.,\u00A0]\\d{3})+|\\d{4,7}|\\d{1,3}[.,]\\d{1,2})";
+    `(?:\\d{1,3}(?:[.,]\\d{1,2})?\\s*(?:${SYMBOL_ALTS})?\\s*[kK]` +
+    `|\\d{1,3}(?:\\s?[.,\u00A0'’]\\d{3})+(?:[.,]\\d{1,2})?` +
+    `|\\d{4,7}|\\d{1,3}[.,]\\d{1,2})`;
   const PT_SRC =
     "(?:\\s{0,2}/\\s{0,2}(?:yr|year|anno)|\\s+(?:a year|per year|yearly|annual|annuo|annua|anno|all['’]anno|per anno)\\b)?";
   const SEP_SRC = "\\s*-{1,2}\\s*|\\s+(?:to|and|e|ed|a|ad|al|ai|alle|allo)\\s+";
 
   const PERIOD_EXCLUDE_RE =
-    /(?:mensil|al mese|per mese|monthly|a month|\/month|settimanal|per settimana|weekly|a week|\/week|orari[oa]|all'ora|all’ora|per ora|hourly|an hour|\/hour|\/hr|al giorno|per giorno|a day|daily|\/day)/i;
+    /(?:mensil[ei](?![a-zà])|al mese|per mese|monthly|a month|\/month|settimanal|per settimana|weekly|a week|\/week|orari[oa]|all'ora|all’ora|per ora|hourly|an hour|\/hour|\/hr|al giorno|per giorno|a day|daily|\/day)/i;
 
-  const CONTEXT_RE = /(?:salary|retribuzi|stipendi|compens|remuneraz|\bRAL\b|\bfascia\b|\bpaga\b|\bwage|\bpay\b)/i;
+  const CONTEXT_RE = /(?:salary|retribuzi|stipendi|compens|remuneraz|\bRAL\b|\bfascia\b|\bpaga\b|\bwage|\bpay\b|range economic)/i;
+
+  const NON_SALARY_CONTEXT_RE = /\bAUM\b|assets under management/i;
 
   const ANYWHERE_RE =
     /(?:\banywhere\b|\bworldwide\b|\bglobal\b|\bremote\b|\bin remoto\b|\bda remoto\b|\bsmart working\b)/i;
@@ -156,15 +160,22 @@
     return WORD_TO_CODE[token.toUpperCase()] || null;
   }
 
+  const SYMBOL_STRIP_RE = new RegExp(`(?:${SYMBOL_ALTS})`, "g");
+
   function parseNum(numRaw) {
-    const raw = numRaw.replace(/[\u00A0\s]/g, "");
+    const raw = numRaw.replace(/[\u00A0\s'’]/g, "");
     const isK = /[kK]$/.test(raw);
-    const body = isK ? raw.slice(0, -1) : raw;
+    const body = (isK ? raw.slice(0, -1) : raw).replace(SYMBOL_STRIP_RE, "");
     let value = null;
     if (isK && /^\d{1,3}(?:[.,]\d{1,2})?$/.test(body)) {
       value = Math.round(Number.parseFloat(body.replace(",", ".")) * 1000);
-    } else if (/^\d{1,3}(?:[.,]\d{3})+$/.test(body)) {
-      value = Number.parseInt(body.replace(/[.,]/g, ""), 10);
+    } else if (/^\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?$/.test(body)) {
+      const centsMatch = body.match(/(?:[.,]\d{1,2})$/);
+      const grouped = centsMatch ? body.slice(0, centsMatch.index) : body;
+      const whole = Number.parseInt(grouped.replace(/[.,]/g, ""), 10);
+      value = centsMatch
+        ? Math.round((whole + Number.parseFloat("0" + centsMatch[0].replace(",", "."))) / 100) * 100
+        : whole;
     } else if (/^\d{4,7}$/.test(body)) {
       value = Number.parseInt(body, 10);
     } else if (/^\d{1,3}[.,]\d{1,2}$/.test(body)) {
@@ -232,18 +243,71 @@
     return spans.some(([s, e]) => start < e && end > s);
   }
 
+  const MISSING_ZERO_RE = /\b(?<!\d[.,'’])(\d{1,3})[.,]00\b/g;
+  const RAL_MARKER_RE = /\bRAL\b/i;
+  const CUR_BEFORE_RE = new RegExp(`(?:${CUR_SRC})\\s*$`, "i");
+  const CUR_AFTER_RE = new RegExp(`^\\s*(?:${CUR_SRC})`, "i");
+
+  function applyMissingZeroTolerance(line) {
+    const hasAnnualMarker =
+      COMPACT_ANNUAL_RE.test(line) || RAL_MARKER_RE.test(line);
+    return line.replace(MISSING_ZERO_RE, (match, digits, offset) => {
+      const value = Number.parseInt(digits, 10);
+      if (value < 10) return match;
+      if (value > 150 && !hasAnnualMarker) return match;
+      const before = line.slice(Math.max(0, offset - 6), offset);
+      const after = line.slice(offset + match.length, offset + match.length + 6);
+      if (/^\s*%/.test(after)) return match;
+      if (!hasAnnualMarker && !CUR_BEFORE_RE.test(before) && !CUR_AFTER_RE.test(after)) {
+        return match;
+      }
+      return `${digits}.000`;
+    });
+  }
+
   function collectLineFacts(line, facts, options = {}) {
     if (PERIOD_EXCLUDE_RE.test(line)) return;
+    if (NON_SALARY_CONTEXT_RE.test(line)) return;
+    if (options.hasContext) line = applyMissingZeroTolerance(line);
 
     const phoneSpans = collectPhoneSpans(line);
     const spans = [];
+    let m;
+    const sharedKRe = new RegExp(
+      `(${CUR_SRC})?\\s{0,3}\\b(\\d{1,3})\\s{0,2}(?:${SEP_SRC})\\s{0,2}(\\d{1,3})\\s*[kK](?![a-zA-Z])`,
+      "gi"
+    );
+    while ((m = sharedKRe.exec(line)) !== null) {
+      const currencyRaw = m[1];
+      let bare = false;
+      let currency;
+      if (currencyRaw) {
+        currency = mapCurrency(currencyRaw);
+        if (!currency) continue;
+      } else {
+        if (!options.allowBare || !options.defaultCurrency || !options.hasContext) continue;
+        bare = true;
+        currency = options.defaultCurrency;
+      }
+      const start = m.index;
+      const end = sharedKRe.lastIndex;
+      spans.push([start, end]);
+      if (overlapsAny(start, end, phoneSpans)) continue;
+      if (isSupplementalAmount(line, start, end)) continue;
+      const a = Number.parseInt(m[2], 10) * 1000;
+      const b = Number.parseInt(m[3], 10) * 1000;
+      const lo = Math.min(a, b);
+      const hi = Math.max(a, b);
+      if (lo < MIN_ANNUAL_AMOUNT || hi > MAX_ANNUAL_AMOUNT) continue;
+      facts.push({ kind: "range", min: lo, max: hi, currency, bare });
+    }
+
     const rangeRe = new RegExp(
       `(${CUR_SRC})?${PT_SRC}?\\s{0,3}(${NUM_SRC})\\s{0,2}(${CUR_SRC})?${PT_SRC}?` +
         `(?:${SEP_SRC})` +
         `\\s{0,3}(${CUR_SRC})?${PT_SRC}?\\s{0,3}(${NUM_SRC})\\s{0,2}(${CUR_SRC})?${PT_SRC}?`,
       "gi"
     );
-    let m;
     while ((m = rangeRe.exec(line)) !== null) {
       const currencyGroups = [m[1], m[3], m[4], m[6]].filter(Boolean).map(mapCurrency);
       const distinct = [...new Set(currencyGroups)];

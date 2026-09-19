@@ -202,7 +202,7 @@ test("manifest packages the MVP: no cloud, feedback reporting enabled", () => {
   assert.equal(manifest.name, "__MSG_extension_name__");
   assert.equal(manifest.description, "__MSG_extension_description__");
   assert.equal(manifest.action.default_title, "__MSG_extension_action_title__");
-  assert.equal(manifest.version, "1.0.1");
+  assert.equal(manifest.version, "1.0.2");
   assert.deepEqual(manifest.host_permissions, ["https://formsubmit.co/*"]);
 
   const scripts = manifest.content_scripts[0].js;
