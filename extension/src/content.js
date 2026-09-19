@@ -28,8 +28,8 @@
 
   const PRIVACY_POLICY_URL =
     "https://github.com/albertocastronovo/lgs-96/blob/main/PRIVACY.md";
-  const FLAG_SVG =
-    '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg>';
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const FLAG_PATH_D = "M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z";
 
   const SCAN_DEBOUNCE_MS = 150;
   const POLL_INTERVAL_MS = 500;
@@ -702,13 +702,26 @@
     );
   }
 
+  function createFlagIcon() {
+    const svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "12");
+    svg.setAttribute("height", "12");
+    svg.setAttribute("fill", "currentColor");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", FLAG_PATH_D);
+    svg.appendChild(path);
+    return svg;
+  }
+
   function createFlag() {
     const flag = document.createElement("span");
     flag.className = FLAG_CLASS;
     flag.setAttribute("role", "button");
     flag.setAttribute("tabindex", "0");
     flag.setAttribute("aria-label", loc(REPORT_ACTION_KEY));
-    flag.innerHTML = FLAG_SVG;
+    flag.appendChild(createFlagIcon());
     flag.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();

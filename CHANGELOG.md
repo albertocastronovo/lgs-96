@@ -4,7 +4,10 @@
 
 ### Added
 - Firefox support: the extension is now packaged for Mozilla Add-ons through a
-  generated cross-browser manifest (contribution by @davidetarsi).
+  generated cross-browser manifest (contribution by @davidetarsi). The Firefox
+  manifest declares the feedback-report transmission through Firefox's built-in
+  data collection consent ("browsing activity") and requires Firefox 140
+  (142 on Android), the versions that introduced the built-in consent prompt.
 - Parser: amounts with cents are recognized in both Italian ("47.101,94",
   "29.000,00€") and US ("28,800.00") formats; cents are rounded to the nearest
   hundred.
@@ -22,6 +25,8 @@
 - Parser: "mensilità" (payment installments) no longer suppresses an annual
   range stated on the same line; ranges about client assets ("AUM") are no
   longer mistaken for salaries.
+- The report flag icon is now built with DOM APIs instead of an innerHTML
+  assignment, clearing the Mozilla add-ons linter warning.
 - Cached results from older parser versions are invalidated so improved
   parsing applies immediately.
 

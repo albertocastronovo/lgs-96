@@ -1,6 +1,6 @@
 # LGS-96 Privacy Policy
 
-_Last updated: 2026-09-12 (version 1.0.1)_
+_Last updated: 2026-09-19 (version 1.0.2)_
 
 LGS-96 is an unofficial browser extension that shows salary indications found in
 LinkedIn job postings directly on the job cards of the search results. It is **not
@@ -43,6 +43,9 @@ affiliated with, endorsed by, or connected to LinkedIn in any way**.
    FormSubmit processes the submission (including network metadata such as your IP
    address, subject to [FormSubmit's privacy policy](https://formsubmit.co/privacy.pdf))
    and emails it to the author, who stores it for the purpose of improving salary detection accuracy.
+   On Firefox 140 or newer (142 on Android), this transmission is declared through
+   Firefox's built-in data collection consent ("browsing activity") and is shown to
+   you at install time.
 
 ## What the extension does NOT do
 

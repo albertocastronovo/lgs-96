@@ -10,7 +10,11 @@
  * The two manifests differ in exactly three ways:
  *   1. background.service_worker  ->  background.scripts (Firefox MV3 has no
  *      service worker background; it uses non-persistent event pages).
- *   2. browser_specific_settings.gecko is added (required to sign on AMO).
+ *   2. browser_specific_settings is added (required to sign on AMO): gecko
+ *      carries the add-on id, strict_min_version 140 (Firefox's built-in data
+ *      collection consent exists from version 140) and the mandatory
+ *      data_collection_permissions declaration; gecko_android raises the
+ *      Android minimum to 142 (the Android version that introduced it).
  *   3. nothing else. Everything else must stay byte-identical, which is the
  *      whole point of generating instead of hand-maintaining a second file.
  *
@@ -28,7 +32,9 @@ const SOURCE = path.join(EXTENSION_DIR, "manifest.json");
 const TARGET = path.join(EXTENSION_DIR, "manifest.firefox.json");
 
 const GECKO_ID = "lgs-96@albertocastronovo.dev";
-const STRICT_MIN_VERSION = "128.0";
+const STRICT_MIN_VERSION = "140.0";
+const GECKO_ANDROID_MIN_VERSION = "142.0";
+const DATA_COLLECTION_PERMISSIONS = { required: ["browsingActivity"] };
 
 // Order matters: these are loaded into a single shared global scope, exactly
 // like the importScripts() call at the top of background.js does on Chrome.
@@ -51,7 +57,12 @@ function buildFirefoxManifest(chromeManifest) {
 
   manifest.background = { scripts: BACKGROUND_SCRIPTS.slice() };
   manifest.browser_specific_settings = {
-    gecko: { id: GECKO_ID, strict_min_version: STRICT_MIN_VERSION }
+    gecko: {
+      id: GECKO_ID,
+      strict_min_version: STRICT_MIN_VERSION,
+      data_collection_permissions: DATA_COLLECTION_PERMISSIONS
+    },
+    gecko_android: { strict_min_version: GECKO_ANDROID_MIN_VERSION }
   };
 
   return manifest;
