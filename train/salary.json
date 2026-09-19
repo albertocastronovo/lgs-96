@@ -41,9 +41,5 @@
   {"description": "Orario di lavoro: 36 ore/settimana. Richiesta disponibilità a lavorare su turni diurni\nSono preferibili candidature di appartenenti a categorie protette in base alla Legge 68/99.\nCCNL: AIOP\nRAL: 20.500€\nBenefit: Ticket restaurant 10€, welfare, incentivi al raggiungimento di obiettivi", "expected": [20500]},
   {"description": "Livello retribuzione di base\n25,00 €/yr - 28,00 €/anno", "expected": [25000, 28000]},
   {"description": "Inquadramento e retribuzione range RAL € 25.731,81 – 26.843,44", "expected": [25700, 26800]},
-  {"description": "", "expected": []},
-  {"description": "", "expected": []},
-  {"description": "", "expected": []},
-  {"description": "", "expected": []},
-  {"description": "", "expected": []}
+  {"description": "The annual salary for this role is EUR €39,000.00 - €54,000.00 plus any applicable bonus", "expected": [39000, 54000]}
 ]
