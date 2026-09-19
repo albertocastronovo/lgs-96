@@ -88,7 +88,7 @@
     `|\\d{4,7}|\\d{1,3}[.,]\\d{1,2})`;
   const PT_SRC =
     "(?:\\s{0,2}/\\s{0,2}(?:yr|year|anno)|\\s+(?:a year|per year|yearly|annual|annuo|annua|anno|all['’]anno|per anno)\\b)?";
-  const SEP_SRC = "\\s*-{1,2}\\s*|\\s+(?:to|and|e|ed|a|ad|al|ai|alle|allo)\\s+";
+  const SEP_SRC = "\\s*-{1,2}\\s*|\\s+(?:to|and|e|ed|a|ad|al|ai|alle|allo)(?:\\s+(?:i|il|lo|la|gli|le|un|uno|una))?\\s+";
 
   const PERIOD_EXCLUDE_RE =
     /(?:mensil[ei](?![a-zà])|al mese|per mese|monthly|a month|\/month|settimanal|per settimana|weekly|a week|\/week|orari[oa]|all'ora|all’ora|per ora|hourly|an hour|\/hour|\/hr|al giorno|per giorno|a day|daily|\/day)/i;

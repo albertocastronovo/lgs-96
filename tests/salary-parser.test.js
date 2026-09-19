@@ -554,3 +554,23 @@ test("compact annual card notation with zero cents", () => {
   const parsed = SalaryParser.parseCardSalaryText("€26,00/yr - €28,00/yr", { defaultCurrency: "EUR" });
   assert.deepEqual(toComparable(parsed.info), [26000, 28000]);
 });
+
+test("italian article between the bounds does not break the range", () => {
+  const reported = SalaryParser.findSalaryInfo(
+    "L'inquadramento definitivo sarà determinato in base alle competenze e all'esperienza maturata, con una ral tra i 28.000 ed i 33.000€",
+    { defaultCurrency: "EUR", allowBareRange: true }
+  );
+  assert.deepEqual(toComparable(reported), [28000, 33000]);
+
+  const ei = SalaryParser.findSalaryInfo("con una ral tra i 28.000 e i 33.000€", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(ei), [28000, 33000]);
+
+  const eil = SalaryParser.findSalaryInfo("con una ral tra 28.000 e il 33.000€", {
+    defaultCurrency: "EUR",
+    allowBareRange: true,
+  });
+  assert.deepEqual(toComparable(eil), [28000, 33000]);
+});

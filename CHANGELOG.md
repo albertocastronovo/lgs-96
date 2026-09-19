@@ -15,6 +15,8 @@
 - Parser: predictable recruiter typos that omit the thousands ("25,00 €/yr",
   "€26,00 and €28,00") are corrected to 25,000 / 26,000-28,000 when the salary
   context is unambiguous.
+- Parser: ranges whose bounds are split by an Italian article ("28.000 ed i
+  33.000€") no longer lose the lower bound.
 
 ### Fixed
 - Parser: "mensilità" (payment installments) no longer suppresses an annual
