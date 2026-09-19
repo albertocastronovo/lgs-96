@@ -3,6 +3,10 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const {
+  buildFirefoxManifest,
+  serializeManifest,
+} = require("./build-firefox-manifest.js");
 
 const ROOT = path.join(__dirname, "..");
 const EXTENSION_DIR = path.join(ROOT, "extension");
@@ -29,6 +33,9 @@ const ICONS_REQUIRED = [
   "icons/android-chrome-192x192.png",
   "icons/android-chrome-512x512.png",
 ];
+
+const TARGETS = ["chrome", "firefox"];
+const DEFAULT_TARGET = "chrome";
 
 const DOS_TIME = 0;
 const DOS_DATE = (1 << 5) | 1;
@@ -98,6 +105,33 @@ function assertIcons() {
   }
 }
 
+function parseTarget(argv) {
+  const flag = argv.find((value) => value.startsWith("--target="));
+  const target = flag ? flag.slice("--target=".length) : DEFAULT_TARGET;
+  if (!TARGETS.includes(target)) {
+    throw new Error(`unknown target: ${target} (expected ${TARGETS.join(" or ")})`);
+  }
+  return target;
+}
+
+// The Firefox ZIP ships the generated manifest under the canonical name
+// manifest.json. Refuse to build if the committed file has drifted from what
+// scripts/build-firefox-manifest.js would produce.
+function readFirefoxManifest() {
+  const chromeManifest = JSON.parse(
+    fs.readFileSync(path.join(EXTENSION_DIR, "manifest.json"), "utf8")
+  );
+  const expected = serializeManifest(buildFirefoxManifest(chromeManifest));
+  const committed = path.join(EXTENSION_DIR, "manifest.firefox.json");
+  if (!fs.existsSync(committed) || fs.readFileSync(committed, "utf8") !== expected) {
+    throw new Error(
+      "extension/manifest.firefox.json is missing or out of sync; " +
+        "run: node scripts/build-firefox-manifest.js"
+    );
+  }
+  return Buffer.from(expected, "utf8");
+}
+
 function buildZip(entries) {
   const localParts = [];
   const centralParts = [];
@@ -159,6 +193,7 @@ function buildZip(entries) {
 }
 
 function main() {
+  const target = parseTarget(process.argv.slice(2));
   const version = assertManifestVersion();
   assertIcons();
 
@@ -180,15 +215,25 @@ function main() {
       : fs.readFileSync(path.join(EXTENSION_DIR, relative)),
   ]);
 
+  if (target === "firefox") {
+    const manifestEntry = entries.find(([name]) => name === "manifest.json");
+    if (!manifestEntry) {
+      throw new Error("manifest.json missing from the packaged entries");
+    }
+    manifestEntry[1] = readFirefoxManifest();
+  }
+
   const zip = buildZip(entries);
   fs.mkdirSync(DIST_DIR, { recursive: true });
-  const zipPath = path.join(DIST_DIR, `lgs-96-${version}.zip`);
+  const suffix = target === DEFAULT_TARGET ? "" : `-${target}`;
+  const zipName = `lgs-96-${version}${suffix}.zip`;
+  const zipPath = path.join(DIST_DIR, zipName);
   fs.writeFileSync(zipPath, zip);
 
   const sha256 = crypto.createHash("sha256").update(zip).digest("hex");
-  fs.writeFileSync(path.join(DIST_DIR, `lgs-96-${version}.zip.sha256`), `${sha256}  lgs-96-${version}.zip\n`);
+  fs.writeFileSync(path.join(DIST_DIR, `${zipName}.sha256`), `${sha256}  ${zipName}\n`);
 
-  console.log(`dist/lgs-96-${version}.zip (${zip.length} bytes, ${entries.length} files)`);
+  console.log(`dist/${zipName} (${zip.length} bytes, ${entries.length} files)`);
   console.log(`SHA-256: ${sha256}`);
 }
 

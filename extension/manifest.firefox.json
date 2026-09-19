@@ -4,17 +4,29 @@
   "version": "1.0.1",
   "description": "__MSG_extension_description__",
   "default_locale": "en",
-  "permissions": ["storage", "declarativeNetRequest"],
-  "host_permissions": ["https://formsubmit.co/*"],
+  "permissions": [
+    "storage",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "https://formsubmit.co/*"
+  ],
   "background": {
-    "service_worker": "src/background.js"
+    "scripts": [
+      "src/compat.js",
+      "src/localization.js",
+      "src/feedback.js",
+      "src/background.js"
+    ]
   },
   "declarative_net_request": {
-    "rule_resources": [{
-      "id": "ruleset_1",
-      "enabled": true,
-      "path": "rules.json"
-    }]
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
   },
   "action": {
     "default_popup": "popup/popup.html",
@@ -33,7 +45,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/*"],
+      "matches": [
+        "https://www.linkedin.com/*"
+      ],
       "js": [
         "src/compat.js",
         "src/routes.js",
@@ -44,8 +58,16 @@
         "src/scheduler.js",
         "src/content.js"
       ],
-      "css": ["src/content.css"],
+      "css": [
+        "src/content.css"
+      ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "lgs-96@albertocastronovo.dev",
+      "strict_min_version": "128.0"
+    }
+  }
 }

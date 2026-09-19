@@ -7,9 +7,14 @@ dependency-free plain JavaScript.
 
 1. Clone the repository.
 2. Load `extension/` as an unpacked extension via `chrome://extensions`
-   (Developer mode).
+   (Developer mode). To test on Firefox instead, load `extension/manifest.firefox.json`
+   as a temporary extension via `about:debugging#/runtime/this-firefox`.
 3. No build step is required. After editing `extension/localization/*.yaml`, run
    `node scripts/generate-locales.js` so `extension/_locales/` stays in sync.
+4. `extension/manifest.firefox.json` is generated from `extension/manifest.json`
+   by `node scripts/build-firefox-manifest.js`. If you change `extension/manifest.json`,
+   re-run that script and commit the result (CI checks with `--check` that the two
+   stay in sync). `node scripts/package.js --target=firefox` builds the Firefox ZIP.
 
 ## Tests
 
