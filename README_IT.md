@@ -3,7 +3,7 @@
 Leggi in altre lingue:
 - :us: [English](README.md)
 
-LGS-96 è un'estensione di Chrome che mostra le informazioni sulla RAL trovate nella descrizione degli annunci di LinkedIn
+LGS-96 è un'estensione per browser che mostra le informazioni sulla RAL trovate nella descrizione degli annunci di LinkedIn
 direttamente sulle card nei risultati di ricerca.  
 L'obiettivo di questo progetto è aiutarti a risparmiare tempo, passando oltre le opportunità non adeguate alle tue aspettative sulla retribuzione.  
 L'estensione prende il suo nome dal **D.Lgs. 96/2026**, la legge italiana in merito alla trasparenza retributiva. Questa legge
@@ -29,16 +29,28 @@ obbligherebbe le aziende a indicare i range retributivi negli annunci di lavoro 
 
 ## Installare l'estensione
 
-### Dal Chrome Web Store (raccomandato)
+### Dal Chrome Web Store / portale Firefox Add-ons (raccomandato)
 
-Scarica l'estensione [qui!](https://chromewebstore.google.com/detail/jlhmooggdapjblphimkojmmadnjhcckn?utm_source=item-share-cb)
+Scarica la versione per Chrome [qui!](https://chromewebstore.google.com/detail/jlhmooggdapjblphimkojmmadnjhcckn?utm_source=item-share-cb)
+
+Scarica la versione per Firefox [qui!](https://addons.mozilla.org/it/firefox/addon/lgs-96/)
+Ringrazio [davidetarsi](https://github.com/davidetarsi) per aver contribuito aggiungendo il supporto a Firefox.
 
 ### Dal codice sorgente
 
+#### Chrome
+
 1. Scarica o clona questa repo;
-2. Apri `chrome://extensions` nel browser;
+2. Apri `chrome://extensions` su Chrome;
 3. Abilita la **Modalità sviluppatore** in alto a destra;
 4. Clicca su **Carica estensione non pacchettizzata** e seleziona la cartella `extension/` di questo progetto.
+
+#### Firefox
+
+1. Scarica o clona questa repo;
+2. Apri `about:debugging#/setup` su Firefox;
+3. Esegui `scripts/package.js` con `node`;
+4. Carica `dist/lgs-96-X.X.X-firefox.zip` (ultima versione) nella scheda **Questo Firefox**.
 
 ## Come si usa
 
@@ -81,6 +93,7 @@ node --test tests/salary-parser.test.js tests/cache.test.js tests/scheduler.test
 ```
 
 Di seguito sono elencati alcuni script accessori:
+- `node build-firefox-manifest.js` - crea il manifest per Firefox.
 - `node scripts/generate-locales.js` — scrive i file in `extension/_locales/` a partire dai file YAML di localizzazione in `extension/localization/`.
 - `node scripts/sanitize-fixtures.js` — esegue un parsing delle pagine HTML in `pages/` per renderle completamente anonime
   (toglie nomi di script, informazioni personali e di contatto).

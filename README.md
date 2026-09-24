@@ -3,7 +3,7 @@
 Read this in other languages:
 - :it: [Italian](README_IT.md)
 
-LGS-96 is an unofficial Chrome extension that shows salary information found in
+LGS-96 is an unofficial browser extension that shows salary information found in
 LinkedIn job postings directly on the job cards in the search results.  
 The purpose of this project is to save you time by letting you skip the job opportunities you may not be
 interested in from a salary standpoint.  
@@ -32,16 +32,29 @@ ranges to be published in job postings. A significant amount of companies, thoug
 
 ## Install the extension
 
-### From the Chrome Web Store (recommended)
+### From the Chrome Web Store / Firefox Add-ons portal (recommended)
 
-Download it from [here!](https://chromewebstore.google.com/detail/jlhmooggdapjblphimkojmmadnjhcckn?utm_source=item-share-cb)
+Download the Chrome version from [here!](https://chromewebstore.google.com/detail/jlhmooggdapjblphimkojmmadnjhcckn?utm_source=item-share-cb)
+
+Download the Firefox version from [here!](https://addons.mozilla.org/it/firefox/addon/lgs-96/)
+Thanks to [davidetarsi](https://github.com/davidetarsi) for adding Firefox support.
+
 
 ### From source
+
+#### Chrome
 
 1. Download or clone this repository.
 2. Open `chrome://extensions` in Chrome.
 3. Enable **Developer mode** (top right).
 4. Click **Load unpacked** and select the `extension/` folder.
+
+#### Firefox
+
+1. Download or clone this repository.
+2. Open `about:debugging#/setup` in Firefox.
+3. Run `scripts/package.js` with `node`.
+4. Load `dist/lgs-96-X.X.X-firefox.zip` (latest version) inside the **This Firefox** tab.
 
 ## How to use it
 
@@ -90,11 +103,12 @@ node --test tests/salary-parser.test.js tests/cache.test.js tests/scheduler.test
 
 Utility scripts:
 
+- `node build-firefox-manifest.js` - builds the Firefox manifest.
 - `node scripts/generate-locales.js` — builds `extension/_locales/` from the
   YAML localization files in `extension/localization/`.
 - `node scripts/sanitize-fixtures.js` — sanitizes the HTML fixtures in `pages/` to make them completely anonymous
   (strips scripts, tracking parameters and profile handles).
-- `node scripts/package.js` — builds the release ZIP in `dist/` and displays its hash.
+- `node scripts/package.js` — builds the release ZIPs in `dist/` and displays its hash.
 
 ### Languages
 
